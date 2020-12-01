@@ -63,8 +63,8 @@ export default class ContactTracingGraph extends LightningElement {
 
     initializeD3() {
 
-        const links = this.data.links.map(d => Object.create(d));
-        const nodes = this.data.nodes.map(d => Object.create(d));
+        var links = this.data.links.map(d => Object.create(d));
+        var nodes = this.data.nodes.map(d => Object.create(d));
         const height = 700;
         const width = 1200;
         console.log(this.data);
@@ -75,9 +75,6 @@ export default class ContactTracingGraph extends LightningElement {
             .force("charge", d3.forceManyBody().strength(-400))
             .force("x", d3.forceX())
             .force("y", d3.forceY());
-        if (this.svg) {
-            d3.select(this.template.querySelector("svg")).remove();
-        }
 
         this.svg = d3.select(this.template.querySelector(".d3"))
             .append('svg')
@@ -85,7 +82,56 @@ export default class ContactTracingGraph extends LightningElement {
             .style("font", "12px sans-serif");
 
         var svg = this.svg;
+
         var color = d3.scaleOrdinal(types, d3.schemeCategory10);
+        var ticked = () => {
+            link.attr("d", linkArc);
+            node.attr("transform", d => `translate(${d.x},${d.y})`);
+        }
+
+        var update = () => {
+            // Make a shallow copy to protect against mutation, while
+            // recycling old nodes to preserve position and velocity.
+            const old = new Map(node.data().map(d => [d.id, d]));
+            nodes = this.data.nodes.map(d => Object.assign(old.get(d.id) || {}, d));
+            links = this.data.links.map(d => Object.assign({}, d));
+
+            node = node
+                .data(nodes, d => d.id)
+                .join(enter => {
+                    var ret = enter.append("g")
+                        .call(drag(simulation))
+                        .on('mouseover', nodeMouseOver)
+                        .on('mouseout', nodeMouseOut)
+                        .on('click', nodeClicked);
+                    ret.append("circle")
+                        .attr("stroke", "white")
+                        .attr("stroke-width", 1.5)
+                        .attr("r", 4);
+                    ret.append("text")
+                        .attr("x", 8)
+                        .attr("y", "0.31em")
+                        .text(d => d.name)
+                        .clone(true).lower()
+                        .attr("fill", "none")
+                        .attr("stroke", "white")
+                        .attr("stroke-width", 3)
+                    return ret;
+                }
+                );
+            link = link
+                .data(links, d => [d.source, d.target])
+                .join("path");
+
+            simulation.nodes(nodes);
+            simulation.force("link").links(links);
+            simulation.on("tick", () => {
+                link.attr("d", linkArc);
+                node.attr("transform", d => `translate(${d.x},${d.y})`);
+            });
+            simulation.alpha(1).restart();
+
+        }
 
 
 
@@ -182,11 +228,11 @@ export default class ContactTracingGraph extends LightningElement {
                                 )
                                     (new Set)
                             );
-                        
+
 
                         this.data.links = [...uniqueLinks];
                         this.data.nodes = [...uniqueNodes];
-                        this.initializeD3()
+                        update()
                     })
                     .catch(error => {
                         console.error(error)
@@ -221,11 +267,11 @@ export default class ContactTracingGraph extends LightningElement {
                                 )
                                     (new Set)
                             );
-                        
+
 
                         this.data.links = [...uniqueLinks];
                         this.data.nodes = [...uniqueNodes];
-                        this.initializeD3()
+                        update();
                     })
                     .catch(error => {
                         console.error(error)
@@ -248,7 +294,7 @@ export default class ContactTracingGraph extends LightningElement {
             .attr("fill", color)
             .attr("d", "M0,-5L10,0L0,5");
 
-        const link = svg.append("g")
+        var link = svg.append("g")
             .attr("fill", "none")
             .attr("stroke-width", 1.5)
             .selectAll("path")
@@ -257,7 +303,7 @@ export default class ContactTracingGraph extends LightningElement {
             .attr("stroke", d => color(d.type))
             .attr("marker-end", d => `url(${new URL(`#arrow-${d.type}`, location)})`);
 
-        const node = svg.append("g")
+        var node = svg.append("g")
             .attr("fill", "currentColor")
             .attr("stroke-linecap", "round")
             .attr("stroke-linejoin", "round")
