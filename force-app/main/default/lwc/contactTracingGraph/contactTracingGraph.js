@@ -58,11 +58,9 @@ export default class ContactTracingGraph extends LightningElement {
             .catch(error => {
                 console.error(error)
             })
-
     }
 
     initializeD3() {
-
         var
             links = this.data.links.map(d => Object.create(d)),
             nodes = this.data.nodes.map(d => Object.create(d)),

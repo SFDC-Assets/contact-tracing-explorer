@@ -5,6 +5,7 @@ public with sharing class ContactTracingGraphCtrl {
 	private static String TYPE_LOOKUP = 'Lookup';
 	private static String TYPE_CONTACT = 'Contact';
 	private static String TYPE_ENCOUNTER = 'Encounter';
+	private static String TYPE_LEAD = 'Lead';
 
 	public class Node {
 		@AuraEnabled
@@ -109,6 +110,7 @@ public with sharing class ContactTracingGraphCtrl {
 	@AuraEnabled
 	public static Graph getGraphByEncounterId(String encounterId){
 		Set<String> contactIds = new Set<String>();
+		Set<String> leadIds = new Set<String>();
 		Graph graph = new Graph();
 
 		try {
@@ -123,7 +125,13 @@ public with sharing class ContactTracingGraphCtrl {
 			 WHERE ContactEncounterId = :encounterId];
 			for ( ContactEncounterParticipant participant : participants ) {
 				contactIds.add(participant.ContactId);
-				graph.addLink(participant.ContactId,participant.ContactEncounterId,TYPE_LOOKUP);
+				leadIds.add(participant.LeadId);
+				if (participant.ContactId != null) {
+					graph.addLink(participant.ContactId,participant.ContactEncounterId,TYPE_LOOKUP);
+				}
+				if (participant.LeadId != null) {
+					graph.addLink(participant.LeadId,participant.ContactEncounterId,TYPE_LOOKUP);
+				}
 			}
 			Contact[] contacts =
 			[SELECT Id, Name
@@ -131,6 +139,13 @@ public with sharing class ContactTracingGraphCtrl {
 			 WHERE Id in :contactIds];
 			for (Contact contact : contacts) {
 				graph.addNode(contact.Id, contact.Name, TYPE_CONTACT);
+			}
+			Lead[] leads =
+			[SELECT Id, Name
+			 FROM Lead
+			 WHERE Id in :leadIds];
+			for (Lead lead : leads) {
+				graph.addNode(lead.Id, lead.Name, TYPE_LEAD);
 			}
 			return graph;
 		} catch (Exception e) {
