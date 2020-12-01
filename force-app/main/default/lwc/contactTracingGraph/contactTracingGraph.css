@@ -1,0 +1,15 @@
+text {
+    font-family: sans-serif;
+    font-size: 10px;
+  }
+  .node {
+    stroke-linecap: round;
+  }
+  .link {
+    fill: none;
+  }
+  
+  div.d3 {
+    background:white;
+    overflow:scroll;
+  }
