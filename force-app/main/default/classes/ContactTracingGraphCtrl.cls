@@ -82,6 +82,18 @@ public with sharing class ContactTracingGraphCtrl {
 	}
 
 	@AuraEnabled
+	public static Contact getContactDetailsById(String contactId){
+		try {
+			return [SELECT Id, Name, IsPersonAccount, Account.HealthCloudGA__StatusGroup__pc
+			 FROM Contact
+			 WHERE Id = :contactId
+			 LIMIT 1];
+		} catch (Exception e) {
+			throw new AuraHandledException(e.getMessage());
+		}
+	}
+
+	@AuraEnabled
 	public static Graph getGraphByContactId(String contactId) {
 		return getGraphByContactId(contactId, false);
 	}

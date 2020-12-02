@@ -9,10 +9,12 @@ import {
 import {
     ShowToastEvent
 } from 'lightning/platformShowToastEvent';
+import { NavigationMixin } from 'lightning/navigation';
 import getGraphByAccountId from '@salesforce/apex/ContactTracingGraphCtrl.getGraphByAccountId';
 import getGraphByEncounterId from '@salesforce/apex/ContactTracingGraphCtrl.getGraphByEncounterId';
 import getGraphByContactId from '@salesforce/apex/ContactTracingGraphCtrl.getGraphByContactId';
 import getGraphByLeadId from '@salesforce/apex/ContactTracingGraphCtrl.getGraphByLeadId';
+import getContactDetailsById from '@salesforce/apex/ContactTracingGraphCtrl.getContactDetailsById';
 import usericon from '@salesforce/resourceUrl/ctgraphusericon';
 import encountericon from '@salesforce/resourceUrl/ctgraphencountericon';
 
@@ -23,16 +25,18 @@ import D3 from '@salesforce/resourceUrl/d3minjs11212020';
 const types = ["Root", "Contact", "Encounter", "Lead", "Lookup"];
 
 
-export default class ContactTracingGraph extends LightningElement {
+export default class ContactTracingGraph extends NavigationMixin(LightningElement) {
 
     d3initialized = false;
     svg;
     data;
-    clickCount = 0;
     @api recordId;
     @track showPopup = false;
     @track popupStyle;
     @track popupTitle;
+    popupRecordId;
+    @track isPerson;
+    @track personStatus;
 
     renderedCallback() {
         if (this.d3initialized) {
@@ -75,6 +79,20 @@ export default class ContactTracingGraph extends LightningElement {
         this.showPopup = false;
     }
 
+    navigateToRecordViewPage(recordId) {
+        this[NavigationMixin.Navigate]({
+            type: 'standard__recordPage',
+            attributes: {
+                recordId,
+                actionName: 'view'
+            }
+        });
+    }
+
+    navigateToPopupRecord() {
+        this.closePopup();
+        this.navigateToRecordViewPage(this.popupRecordId);
+    }
 
     initializeD3() {
         var
@@ -255,13 +273,21 @@ export default class ContactTracingGraph extends LightningElement {
             },
 
             openPopup = d => {
+                this.popupRecordId = d.target.__data__.id;
                 if ((d.target.__data__.type === 'Contact') ||
                     (d.target.__data__.type === 'Lead') ||
                     (d.target.__data__.type === 'Root')) {
                     this.popupTitle = d.target.__data__.name;
+                    this.isPerson = true;
+                    getContactDetailsById({contactId : this.popupRecordId})
+                    .then(result => {
+                        console.log("contact query",result);
+                        this.personStatus = result.Account.HealthCloudGA__StatusGroup__pc;
+                    })
                 }
                 if (d.target.__data__.type === 'Encounter') {
                     this.popupTitle = d.target.__data__.name;
+                    this.isPerson = false;
                 }
                 let x = d.offsetX
                 let y = d.offsetY;
