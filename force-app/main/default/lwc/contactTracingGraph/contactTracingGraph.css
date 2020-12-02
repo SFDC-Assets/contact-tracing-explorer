@@ -13,3 +13,6 @@ text {
     background:white;
     overflow:scroll;
   }
+  div.popup {
+    position:absolute;
+  }

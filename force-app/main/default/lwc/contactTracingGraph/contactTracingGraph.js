@@ -1,6 +1,7 @@
 import {
     LightningElement,
-    api
+    api,
+    track
 } from 'lwc';
 import {
     loadScript
@@ -27,7 +28,11 @@ export default class ContactTracingGraph extends LightningElement {
     d3initialized = false;
     svg;
     data;
+    clickCount = 0;
     @api recordId;
+    @track showPopup = false;
+    @track popupStyle;
+    @track popupTitle;
 
     renderedCallback() {
         if (this.d3initialized) {
@@ -65,6 +70,11 @@ export default class ContactTracingGraph extends LightningElement {
                 console.error(error)
             })
     }
+
+    closePopup() {
+        this.showPopup = false;
+    }
+
 
     initializeD3() {
         var
@@ -108,7 +118,8 @@ export default class ContactTracingGraph extends LightningElement {
                             .call(drag(simulation))
                             .on('mouseover', nodeMouseOver)
                             .on('mouseout', nodeMouseOut)
-                            .on('click', nodeClicked);
+                            .on('dblclick', nodeClicked)
+                            .on('contextmenu', openPopup)
                         ret.append("circle")
                             .attr("stroke", "white")
                             .attr("stroke-width", 1.5)
@@ -240,7 +251,26 @@ export default class ContactTracingGraph extends LightningElement {
                     getGraphByLeadId({ leadId: d.target.__data__.id })
                         .then(result => dedupAndUpdateGraph(result))
                         .catch(error => console.error(error))
+                }  
+            },
+
+            openPopup = d => {
+                if ((d.target.__data__.type === 'Contact') ||
+                    (d.target.__data__.type === 'Lead') ||
+                    (d.target.__data__.type === 'Root')) {
+                    this.popupTitle = d.target.__data__.name;
                 }
+                if (d.target.__data__.type === 'Encounter') {
+                    this.popupTitle = d.target.__data__.name;
+                }
+                let x = d.offsetX
+                let y = d.offsetY;
+                let xstyle = "left : " + Math.round(x) + "px;"
+                let ystyle = "top : " + Math.round(y) + "px;"
+                this.popupStyle = xstyle + ystyle;
+                this.showPopup = true;
+                d.preventDefault();
+                return false;
             }
 
         //Create the legend
@@ -299,7 +329,8 @@ export default class ContactTracingGraph extends LightningElement {
             .call(drag(simulation))
             .on('mouseover', nodeMouseOver)
             .on('mouseout', nodeMouseOut)
-            .on('click', nodeClicked);
+            .on('dblclick', nodeClicked)
+            .on('contextmenu', openPopup);
 
         node.append("circle")
             .attr("stroke", "white")
