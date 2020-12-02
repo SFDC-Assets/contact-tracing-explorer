@@ -3,6 +3,7 @@ public with sharing class ContactTracingGraphCtrl {
 
 	private static String TYPE_MASTERDETAIL = 'Master-Detail';
 	private static String TYPE_LOOKUP = 'Lookup';
+	private static String TYPE_ROOT = 'Root';
 	private static String TYPE_CONTACT = 'Contact';
 	private static String TYPE_ENCOUNTER = 'Encounter';
 	private static String TYPE_LEAD = 'Lead';
@@ -13,7 +14,7 @@ public with sharing class ContactTracingGraphCtrl {
 		@AuraEnabled
 		public String name {get; set;}
 		@AuraEnabled
-		public String type {get;set;}
+		public String type {get; set;}
 		Node(String id, String name, String type) {
 			this.id = id;
 			this.name = name;
@@ -64,28 +65,39 @@ public with sharing class ContactTracingGraphCtrl {
 
 	@AuraEnabled
 	public static Graph getGraphByAccountId(String accountId){
+		return getGraphByAccountId(accountId, false);
+	}
+
+	@AuraEnabled
+	public static Graph getGraphByAccountId(String accountId, Boolean isRoot){
 		try {
 			if (accountId == null) {
 				accountId = '0013t00001ZufHGAAZ';
 			}
 			Account acct = [SELECT Id, PersonContactId from Account where Id = :accountId LIMIT 1];
-			return getGraphByContactId(acct.PersonContactId);
+			return getGraphByContactId(acct.PersonContactId,isRoot);
 		} catch (Exception e) {
 			throw new AuraHandledException(e.getMessage());
 		}
 	}
 
 	@AuraEnabled
-	public static Graph getGraphByContactId(String contactId){
+	public static Graph getGraphByContactId(String contactId) {
+		return getGraphByContactId(contactId, false);
+	}
+
+	@AuraEnabled
+	public static Graph getGraphByContactId(String contactId, Boolean isRoot){
 		Set<String> encounterIds = new Set<String>();
 		Graph graph = new Graph();
 
 		try {
 			Contact contact =
-			[SELECT Id, Name from Contact
+			[SELECT Id, Name, IsPersonAccount, Account.HealthCloudGA__StatusGroup__pc
+			 FROM Contact
 			 WHERE Id = :contactId
-			            LIMIT 1];
-			graph.addNode(contact.Id, contact.Name, TYPE_CONTACT);
+			 LIMIT 1];
+			graph.addNode(contact.Id, contact.Name, isRoot ? TYPE_ROOT : TYPE_CONTACT);
 			ContactEncounterParticipant[] participants =
 			[SELECT Id, Name, ContactId, LeadId, ContactEncounterId
 			 FROM ContactEncounterParticipant
@@ -93,6 +105,38 @@ public with sharing class ContactTracingGraphCtrl {
 			for ( ContactEncounterParticipant participant : participants ) {
 				encounterIds.add(participant.ContactEncounterId);
 				graph.addLink(contactId,participant.ContactEncounterId,TYPE_LOOKUP);
+			}
+			ContactEncounter[] encounters =
+			[SELECT Id, Name, LocationId
+			 FROM ContactEncounter
+			 WHERE Id in :encounterIds];
+			for (ContactEncounter encounter : encounters) {
+				graph.addNode(encounter.Id, encounter.Name, TYPE_ENCOUNTER);
+			}
+			return graph;
+		} catch (Exception e) {
+			throw new AuraHandledException(e.getMessage());
+		}
+	}
+
+	@AuraEnabled
+	public static Graph getGraphByLeadId(String leadId){
+		Set<String> encounterIds = new Set<String>();
+		Graph graph = new Graph();
+
+		try {
+			Lead lead =
+			[SELECT Id, Name from Lead
+			 WHERE Id = :leadId
+			            LIMIT 1];
+			graph.addNode(lead.Id, lead.Name, TYPE_LEAD);
+			ContactEncounterParticipant[] participants =
+			[SELECT Id, Name, ContactId, LeadId, ContactEncounterId
+			 FROM ContactEncounterParticipant
+			 WHERE LeadId = :leadId];
+			for ( ContactEncounterParticipant participant : participants ) {
+				encounterIds.add(participant.ContactEncounterId);
+				graph.addLink(leadId,participant.ContactEncounterId,TYPE_LOOKUP);
 			}
 			ContactEncounter[] encounters =
 			[SELECT Id, Name, LocationId
@@ -117,7 +161,7 @@ public with sharing class ContactTracingGraphCtrl {
 			ContactEncounter encounter =
 			[SELECT Id, Name from ContactEncounter
 			 WHERE Id = :encounterId
-			 LIMIT 1];
+			            LIMIT 1];
 			graph.addNode(encounter.Id, encounter.Name, TYPE_ENCOUNTER);
 			ContactEncounterParticipant[] participants =
 			[SELECT Id, Name, ContactId, LeadId, ContactEncounterId

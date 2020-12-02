@@ -11,10 +11,15 @@ import {
 import getGraphByAccountId from '@salesforce/apex/ContactTracingGraphCtrl.getGraphByAccountId';
 import getGraphByEncounterId from '@salesforce/apex/ContactTracingGraphCtrl.getGraphByEncounterId';
 import getGraphByContactId from '@salesforce/apex/ContactTracingGraphCtrl.getGraphByContactId';
+import getGraphByLeadId from '@salesforce/apex/ContactTracingGraphCtrl.getGraphByLeadId';
+import usericon from '@salesforce/resourceUrl/ctgraphusericon';
+import encountericon from '@salesforce/resourceUrl/ctgraphencountericon';
+
+
 
 import D3 from '@salesforce/resourceUrl/d3minjs11212020';
 
-const types = ["Master-Detail", "Lookup"];
+const types = ["Root", "Contact", "Encounter", "Lead", "Lookup"];
 
 
 export default class ContactTracingGraph extends LightningElement {
@@ -49,7 +54,8 @@ export default class ContactTracingGraph extends LightningElement {
 
     getContactTraceData() {
         getGraphByAccountId({
-            accountId: this.recordId
+            accountId: this.recordId,
+            isRoot: true
         })
             .then(result => {
                 this.data = result;
@@ -69,7 +75,7 @@ export default class ContactTracingGraph extends LightningElement {
             height = 700,
             width = 1200,
             simulation = d3.forceSimulation(nodes)
-                .force("link", d3.forceLink(links).id(d => d.id).distance(50))
+                .force("link", d3.forceLink(links).id(d => d.id).distance(90))
                 .force("charge", d3.forceManyBody().strength(-400))
                 .force("x", d3.forceX())
                 .force("y", d3.forceY()),
@@ -81,6 +87,11 @@ export default class ContactTracingGraph extends LightningElement {
             ticked = () => {
                 link.attr("d", linkArc);
                 node.attr("transform", d => `translate(${d.x},${d.y})`);
+            },
+
+            iconselector = type => {
+                if (type == "Encounter") return encountericon;
+                return usericon;
             },
 
             update = () => {
@@ -101,9 +112,16 @@ export default class ContactTracingGraph extends LightningElement {
                         ret.append("circle")
                             .attr("stroke", "white")
                             .attr("stroke-width", 1.5)
-                            .attr("r", 4);
+                            .attr("fill", d => color(d.type))
+                            .attr("r", 16);
+                        ret.append("image")
+                            .attr("xlink:href", d => iconselector(d.type))
+                            .attr("x", "-12px")
+                            .attr("y", "-12px")
+                            .attr("width", "24px")
+                            .attr("height", "24px");
                         ret.append("text")
-                            .attr("x", 8)
+                            .attr("x", 20)
                             .attr("y", "0.31em")
                             .text(d => d.name)
                             .clone(true).lower()
@@ -114,7 +132,9 @@ export default class ContactTracingGraph extends LightningElement {
                     });
                 link = link
                     .data(links, d => [d.source, d.target])
-                    .join("path");
+                    .join("path")
+                    .attr("stroke", d => color(d.type))
+                    .attr("marker-end", d => `url(${new URL(`#arrow-${d.type}`, location)})`);;
 
                 simulation.nodes(nodes);
                 simulation.force("link").links(links);
@@ -163,20 +183,20 @@ export default class ContactTracingGraph extends LightningElement {
             nodeMouseOver = d => {
                 console.log("mouse over node", d);
                 //node.style('fill', "#B8B8B8")
-                d.target.setAttribute("style", "fill:#FF0000");
+                //d.target.setAttribute("style", "fill:#FF0000");
                 //d3.select(this).style('fill', '#69b3b2')
                 // Highlight the connections
-                link
-                    .style('stroke', function (link_d) {
-                        return link_d.source === d.target.__data__ || link_d.target === d.target.__data__ ? '#000000' : color(link_d.type);
-                    })
+                // link
+                //    .style('stroke', function (link_d) {
+                //        return link_d.source === d.target.__data__ || link_d.target === d.target.__data__ ? '#000000' : color(link_d.type);
+                //    })
                 /*.style('stroke-width', function (link_d) {
                     return link_d.source === d.target.__data__ || link_d.target === d.target.__data__ ? 2 : 1.5;
                 })*/
             },
             nodeMouseOut = d => {
-                d.target.setAttribute("style", "fill:#000000");
-                link.style('stroke', dlink => color(dlink.type))
+                //d.target.setAttribute("style", "fill:#000000");
+                //link.style('stroke', dlink => color(dlink.type))
                 //.style('stroke-width', '1.5')
             },
 
@@ -216,7 +236,34 @@ export default class ContactTracingGraph extends LightningElement {
                         .then(result => dedupAndUpdateGraph(result))
                         .catch(error => console.error(error))
                 }
+                if (d.target.__data__.type === 'Lead') {
+                    getGraphByLeadId({ leadId: d.target.__data__.id })
+                        .then(result => dedupAndUpdateGraph(result))
+                        .catch(error => console.error(error))
+                }
             }
+
+        //Create the legend
+        svg.selectAll("mydots")
+            .data(types)
+            .enter()
+            .append("circle")
+            .attr("cx", -width / 2 + 10)
+            .attr("cy", function (d, i) { return -height / 2 + 100 + i * 25 }) // 100 is where the first dot appears. 25 is the distance between dots
+            .attr("r", 7)
+            .style("fill", function (d) { return color(d) })
+
+        // Add one dot in the legend for each name.
+        svg.selectAll("mylabels")
+            .data(types)
+            .enter()
+            .append("text")
+            .attr("x", -width / 2 + 30)
+            .attr("y", function (d, i) { return -height / 2 + 100 + i * 25 }) // 100 is where the first dot appears. 25 is the distance between dots
+            .style("fill", function (d) { return color(d) })
+            .text(function (d) { return d })
+            .attr("text-anchor", "left")
+            .style("alignment-baseline", "middle")
 
         //Initialize the svg drawing
         svg.append("defs").selectAll("marker")
@@ -257,10 +304,18 @@ export default class ContactTracingGraph extends LightningElement {
         node.append("circle")
             .attr("stroke", "white")
             .attr("stroke-width", 1.5)
-            .attr("r", 4);
+            .attr("fill", d => color(d.type))
+            .attr("r", 16);
+
+        node.append("image")
+            .attr("xlink:href", d => iconselector(d.type))
+            .attr("x", "-12px")
+            .attr("y", "-12px")
+            .attr("width", "24px")
+            .attr("height", "24px");
 
         node.append("text")
-            .attr("x", 8)
+            .attr("x", 20)
             .attr("y", "0.31em")
             .text(d => d.name)
             .clone(true).lower()
