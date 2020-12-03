@@ -1,23 +1,37 @@
 text {
-    font-family: sans-serif;
-    font-size: 10px;
-  }
-  .node {
-    stroke-linecap: round;
-  }
-  .link {
-    fill: none;
-  }
-  
-  div.d3 {
-    background:white;
-    overflow:scroll;
-  }
-  div.popup {
-    position:absolute;
-  }
-  div.pancontrols {
-    position:absolute;
-    top:20px;
-    right:30px;
-  }
+  font-family: sans-serif;
+  font-size: 10px;
+}
+
+.node {
+  stroke-linecap: round;
+}
+
+.link {
+  fill: none;
+}
+
+.graph {
+  position: relative;
+}
+
+div.d3 {
+  background: white;
+  overflow: scroll;
+}
+
+div.popup {
+  position: absolute;
+}
+
+div.pancontrols {
+  position: absolute;
+  top: 20px;
+  right: 30px;
+}
+
+div.legend {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+}

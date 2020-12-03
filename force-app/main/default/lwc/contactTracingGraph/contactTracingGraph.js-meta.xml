@@ -18,6 +18,12 @@
             </property>
             <property name="height" type="Integer">
             </property>
+            <property name="legendWidth" type="Integer" default="100">
+            </property>
+            <property name="legendHeight" type="Integer" default="500">
+            </property>
+            <property name="showLegend" type="Boolean" default="true">
+            </property>
             <objects>
                 <object>
                     Account

@@ -28,12 +28,16 @@ export default class ContactTracingGraph extends NavigationMixin(LightningElemen
 
     d3initialized = false;
     svg;
+    legend;
     data;
     popupRecordId;
     @api recordId;
     @api title;
     @api width;
     @api height;
+    @api showLegend;
+    @api legendWidth; //delete me
+    @api legendHeight; //delete me
     @track showPopup = false;
     @track popupStyle;
     @track popupTitle;
@@ -50,6 +54,8 @@ export default class ContactTracingGraph extends NavigationMixin(LightningElemen
             this.width = 1200;
         if ((this.height === null) || (this.height === undefined))
             this.height = 500;
+        //for testing
+        this.showLegend = true;
     }
 
     renderedCallback() {
@@ -99,6 +105,16 @@ export default class ContactTracingGraph extends NavigationMixin(LightningElemen
         let x = this.xshift;
         let y = this.yshift;
         this.svg.attr("viewBox", [-width / 2 + x, -height / 2 + y, width, height])
+        this.legend.selectAll("circle")
+            .attr("cx", -width / 2 + 10 + x)
+            .attr("cy", function (d, i) {
+                return -height / 2 + 100 + i * 25 + y
+            });
+        this.legend.selectAll("text")
+            .attr("x", -width / 2 + 30 + x)
+            .attr("y", function (d, i) {
+                return -height / 2 + 100 + i * 25 + y
+            });
     }
 
     panleft() {
@@ -355,12 +371,17 @@ export default class ContactTracingGraph extends NavigationMixin(LightningElemen
             svg = d3.select(this.template.querySelector(".d3"))
             .append('svg')
             .attr("viewBox", [-width / 2, -height / 2, width, height])
-            .style("font", "12px sans-serif");
+            .style("font", "12px sans-serif"),
+
+            legend = svg.append("g")
+            .attr("fill", "none")
+            .attr("stroke-width", 1.5);
 
         this.svg = svg;
+        this.legend = legend;
 
         //Create the legend
-        svg.selectAll("mydots")
+        legend.selectAll("mydots")
             .data(types)
             .enter()
             .append("circle")
@@ -374,7 +395,7 @@ export default class ContactTracingGraph extends NavigationMixin(LightningElemen
             })
 
         // Add one dot in the legend for each name.
-        svg.selectAll("mylabels")
+        legend.selectAll("mylabels")
             .data(types)
             .enter()
             .append("text")
