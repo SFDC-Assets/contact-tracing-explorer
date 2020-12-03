@@ -17,9 +17,6 @@ import getGraphByLeadId from '@salesforce/apex/ContactTracingGraphCtrl.getGraphB
 import getContactDetailsById from '@salesforce/apex/ContactTracingGraphCtrl.getContactDetailsById';
 import usericon from '@salesforce/resourceUrl/ctgraphusericon';
 import encountericon from '@salesforce/resourceUrl/ctgraphencountericon';
-
-
-
 import D3 from '@salesforce/resourceUrl/d3minjs11212020';
 
 const types = ["Root", "Contact", "Encounter", "Lead", "Lookup"];
@@ -30,13 +27,26 @@ export default class ContactTracingGraph extends NavigationMixin(LightningElemen
     d3initialized = false;
     svg;
     data;
+    popupRecordId;
     @api recordId;
+    @api title;
+    @api width;
+    @api height;
     @track showPopup = false;
     @track popupStyle;
     @track popupTitle;
-    popupRecordId;
+    @track hasTitle;
     @track isPerson;
     @track personStatus;
+
+
+    connectedCallback() {
+        this.hasTitle = (this.title != null) || (this.title === "");
+        if ((this.width === null) || (this.width === undefined))
+            this.width = 1200;
+        if ((this.height === null) || (this.height === undefined))
+            this.height = 500;
+    }
 
     renderedCallback() {
         if (this.d3initialized) {
@@ -100,8 +110,8 @@ export default class ContactTracingGraph extends NavigationMixin(LightningElemen
             nodes = this.data.nodes.map(d => Object.create(d)),
             link, node;
         const
-            height = 700,
-            width = 1200,
+            height = this.height,
+            width = this.width,
             simulation = d3.forceSimulation(nodes)
                 .force("link", d3.forceLink(links).id(d => d.id).distance(90))
                 .force("charge", d3.forceManyBody().strength(-400))

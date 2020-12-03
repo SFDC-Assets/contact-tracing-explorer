@@ -102,13 +102,16 @@ public with sharing class ContactTracingGraphCtrl {
 	public static Graph getGraphByContactId(String contactId, Boolean isRoot){
 		Set<String> encounterIds = new Set<String>();
 		Graph graph = new Graph();
-
-		try {
+		if (isRoot == null) {
+			isRoot = false;
+		}
+		//try {
 			Contact contact =
 			[SELECT Id, Name, IsPersonAccount, Account.HealthCloudGA__StatusGroup__pc
 			 FROM Contact
 			 WHERE Id = :contactId
 			 LIMIT 1];
+			 System.debug(contact.Id + ' ' + contact.Name + ' ' + isRoot);
 			graph.addNode(contact.Id, contact.Name, isRoot ? TYPE_ROOT : TYPE_CONTACT);
 			ContactEncounterParticipant[] participants =
 			[SELECT Id, Name, ContactId, LeadId, ContactEncounterId
@@ -126,9 +129,10 @@ public with sharing class ContactTracingGraphCtrl {
 				graph.addNode(encounter.Id, encounter.Name, TYPE_ENCOUNTER);
 			}
 			return graph;
-		} catch (Exception e) {
-			throw new AuraHandledException(e.getMessage());
-		}
+		//} catch (Exception e) {
+		//	System.debug(e.getStackTraceString());
+		//	throw new AuraHandledException(e.getMessage());
+		//}
 	}
 
 	@AuraEnabled

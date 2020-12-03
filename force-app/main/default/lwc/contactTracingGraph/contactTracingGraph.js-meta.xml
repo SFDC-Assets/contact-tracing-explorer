@@ -12,6 +12,12 @@
     </targets>
     <targetConfigs>
         <targetConfig targets="lightning__RecordPage">
+            <property name="title" type="String">
+            </property>
+            <property name="width" type="Integer">
+            </property>
+            <property name="height" type="Integer">
+            </property>
             <objects>
                 <object>
                     Account
