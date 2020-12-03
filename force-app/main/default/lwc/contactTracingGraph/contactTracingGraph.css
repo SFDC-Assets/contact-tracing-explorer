@@ -30,8 +30,22 @@ div.pancontrols {
   right: 30px;
 }
 
+div.pancontrols lightning-slider {
+  display:inline-block;
+}
+
+div.pancontrols table {
+  float:right;
+}
+
 div.legend {
   position: absolute;
   top: 20px;
   left: 20px;
+}
+
+div.zoomcontrols {
+  position: absolute;
+  top: 200px;
+  right:30px;
 }

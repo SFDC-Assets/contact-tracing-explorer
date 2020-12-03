@@ -44,8 +44,10 @@ export default class ContactTracingGraph extends NavigationMixin(LightningElemen
     @track hasTitle;
     @track isPerson;
     @track personStatus;
+    @track zoom = 4;
     xshift = 0;
     yshift = 0;
+    zoomScalingFactors = [4,2,1.5,1,0.75,0.50,0.25];
 
 
     connectedCallback() {
@@ -104,16 +106,19 @@ export default class ContactTracingGraph extends NavigationMixin(LightningElemen
         let height = this.height;
         let x = this.xshift;
         let y = this.yshift;
-        this.svg.attr("viewBox", [-width / 2 + x, -height / 2 + y, width, height])
+        let scalingFactor = this.zoomScalingFactors[this.zoom-1];
+        let newWidth = Math.round(parseInt(this.width) * scalingFactor);
+        let newHeight = Math.round(parseInt(this.height) * scalingFactor);
+        this.svg.attr("viewBox", [-newWidth / 2 + x, -newHeight / 2 + y, newWidth, newHeight])
         this.legend.selectAll("circle")
-            .attr("cx", -width / 2 + 10 + x)
+            .attr("cx", -newWidth / 2 + 10 + x)
             .attr("cy", function (d, i) {
-                return -height / 2 + 100 + i * 25 + y
+                return -newHeight / 2 + 10 + i * 25 + y
             });
         this.legend.selectAll("text")
-            .attr("x", -width / 2 + 30 + x)
+            .attr("x", -newWidth / 2 + 30 + x)
             .attr("y", function (d, i) {
-                return -height / 2 + 100 + i * 25 + y
+                return -newHeight / 2 + 10 + i * 25 + y
             });
     }
 
@@ -140,6 +145,13 @@ export default class ContactTracingGraph extends NavigationMixin(LightningElemen
     center() {
         this.xshift = 0;
         this.yshift = 0;
+        this.pan();
+    }
+
+    
+    updateZoom(event) {
+        console.log(event.target.value);
+        this.zoom = event.target.value;
         this.pan();
     }
 
@@ -387,7 +399,7 @@ export default class ContactTracingGraph extends NavigationMixin(LightningElemen
             .append("circle")
             .attr("cx", -width / 2 + 10)
             .attr("cy", function (d, i) {
-                return -height / 2 + 100 + i * 25
+                return -height / 2 + 10 + i * 25
             }) // 100 is where the first dot appears. 25 is the distance between dots
             .attr("r", 7)
             .style("fill", function (d) {
@@ -401,7 +413,7 @@ export default class ContactTracingGraph extends NavigationMixin(LightningElemen
             .append("text")
             .attr("x", -width / 2 + 30)
             .attr("y", function (d, i) {
-                return -height / 2 + 100 + i * 25
+                return -height / 2 + 10 + i * 25
             }) // 100 is where the first dot appears. 25 is the distance between dots
             .style("fill", function (d) {
                 return color(d)

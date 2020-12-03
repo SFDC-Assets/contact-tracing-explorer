@@ -5,34 +5,76 @@
         </template>
         <div class="d3" lwc:dom="manual"></div>
         <div class="pancontrols">
-            <table>
-                <tbody>
-                    <tr>
-                        <td></td>
-                        <td><lightning-button-icon icon-name="utility:chevronup"  alternative-text="Up" title="Up" onclick={panup}></lightning-button-icon></td>
-                        <td></td>
-                    </tr>
-                    <tr>
-                        <td><lightning-button-icon icon-name="utility:chevronleft"  alternative-text="Left" title="Left" onclick={panleft}></lightning-button-icon></td>
-                        <td><lightning-button-icon icon-name="utility:diamond"  alternative-text="Center" title="Center" onclick={center}></lightning-button-icon></td>
-                        <td><lightning-button-icon icon-name="utility:chevronright"  alternative-text="Right" title="Right" onclick={panright}></lightning-button-icon></td>
-                    </tr>
-                    <tr>
-                        <td></td>
-                        <td><lightning-button-icon icon-name="utility:chevrondown"  alternative-text="Down" title="Down" onclick={pandown}></lightning-button-icon></td>
-                        <td></td>
-                    </tr>
-                </tbody>
-            </table>
+            <div class="slds-grid">
+                <div class="slds-col">
+                    <div class="slds-form-element">
+                        <label class="slds-form-element__label" for="slider-id-01">
+                            <span class="slds-slider-label">
+                                <span class="slds-slider-label__label">Zoom</span>
+                                <span class="slds-slider-label__range">1 - 7</span>
+                            </span>
+                        </label>
+                        <div class="slds-form-element__control">
+                            <div class="slds-slider">
+                                <input type="range" id="slider-id-01" class="slds-slider__range" min="1" max="7" step="1" value={zoom} onchange={updateZoom}/>
+                                <span class="slds-slider__value" aria-hidden="true">{zoom}</span>
+                            </div>
+                        </div>
+                    </div>
+                   
+                </div>
+                <div class="slds-col">
+                    <table>
+                        <tbody>
+                            <tr>
+                                <td></td>
+                                <td>
+                                    <lightning-button-icon icon-name="utility:chevronup" alternative-text="Up"
+                                        title="Up" onclick={panup}></lightning-button-icon>
+                                </td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <lightning-button-icon icon-name="utility:chevronleft" alternative-text="Left"
+                                        title="Left" onclick={panleft}></lightning-button-icon>
+                                </td>
+                                <td>
+                                    <lightning-button-icon icon-name="utility:diamond" alternative-text="Center"
+                                        title="Center" onclick={center}></lightning-button-icon>
+                                </td>
+                                <td>
+                                    <lightning-button-icon icon-name="utility:chevronright" alternative-text="Right"
+                                        title="Right" onclick={panright}></lightning-button-icon>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td></td>
+                                <td>
+                                    <lightning-button-icon icon-name="utility:chevrondown" alternative-text="Down"
+                                        title="Down" onclick={pandown}></lightning-button-icon>
+                                </td>
+                                <td></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+
+
+        </div>
+        <div class="zoomcontrols">
         </div>
         <template if:true={showPopup}>
             <div class="popup" style={popupStyle}>
                 <lightning-card title={popupTitle} variant="Narrow" icon-name="custom:custom14" classname="popup">
-                    <lightning-button-icon  icon-name="utility:close" variant="container" alternative-text="Show More" slot="actions" onclick={closePopup}></lightning-button-icon>
+                    <lightning-button-icon icon-name="utility:close" variant="container" alternative-text="Show More"
+                        slot="actions" onclick={closePopup}></lightning-button-icon>
                     <div class="slds-var-m-around_medium">
                         <button class="slds-button" onclick={navigateToPopupRecord}>Navigate to record</button>
                         <template if:true={isPerson}>
-                            <br/>
+                            <br />
                             Status Group: {personStatus}
                         </template>
                     </div>
