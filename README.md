@@ -12,3 +12,6 @@ recenter graph on root node
 add date filter capability
 relabel the legend
 collapse nodes (collapse attached nodes, remove orphaned nodes)
+
+Bugs:
+fix popup dialog x,y issue in firefox.

@@ -9,7 +9,9 @@ import {
 import {
     ShowToastEvent
 } from 'lightning/platformShowToastEvent';
-import { NavigationMixin } from 'lightning/navigation';
+import {
+    NavigationMixin
+} from 'lightning/navigation';
 import getGraphByAccountId from '@salesforce/apex/ContactTracingGraphCtrl.getGraphByAccountId';
 import getGraphByEncounterId from '@salesforce/apex/ContactTracingGraphCtrl.getGraphByEncounterId';
 import getGraphByContactId from '@salesforce/apex/ContactTracingGraphCtrl.getGraphByContactId';
@@ -38,6 +40,8 @@ export default class ContactTracingGraph extends NavigationMixin(LightningElemen
     @track hasTitle;
     @track isPerson;
     @track personStatus;
+    xshift = 0;
+    yshift = 0;
 
 
     connectedCallback() {
@@ -54,8 +58,8 @@ export default class ContactTracingGraph extends NavigationMixin(LightningElemen
         }
         this.d3initialized = true;
         Promise.all([
-            loadScript(this, D3)
-        ])
+                loadScript(this, D3)
+            ])
             .then(() => {
                 this.getContactTraceData();
             })
@@ -73,9 +77,9 @@ export default class ContactTracingGraph extends NavigationMixin(LightningElemen
 
     getContactTraceData() {
         getGraphByAccountId({
-            accountId: this.recordId,
-            isRoot: true
-        })
+                accountId: this.recordId,
+                isRoot: true
+            })
             .then(result => {
                 this.data = result;
                 this.initializeD3()
@@ -87,6 +91,40 @@ export default class ContactTracingGraph extends NavigationMixin(LightningElemen
 
     closePopup() {
         this.showPopup = false;
+    }
+
+    pan() {
+        let width = this.width;
+        let height = this.height;
+        let x = this.xshift;
+        let y = this.yshift;
+        this.svg.attr("viewBox", [-width / 2 + x, -height / 2 + y, width, height])
+    }
+
+    panleft() {
+        this.xshift += 100;
+        this.pan();
+    }
+
+    panright() {
+        this.xshift -= 100;
+        this.pan();
+    }
+
+    panup() {
+        this.yshift += 100;
+        this.pan();
+    }
+
+    pandown() {
+        this.yshift -= 100
+        this.pan();
+    }
+
+    center() {
+        this.xshift = 0;
+        this.yshift = 0;
+        this.pan();
     }
 
     navigateToRecordViewPage(recordId) {
@@ -113,14 +151,11 @@ export default class ContactTracingGraph extends NavigationMixin(LightningElemen
             height = this.height,
             width = this.width,
             simulation = d3.forceSimulation(nodes)
-                .force("link", d3.forceLink(links).id(d => d.id).distance(90))
-                .force("charge", d3.forceManyBody().strength(-400))
-                .force("x", d3.forceX())
-                .force("y", d3.forceY()),
-            svg = d3.select(this.template.querySelector(".d3"))
-                .append('svg')
-                .attr("viewBox", [-width / 2, -height / 2, width, height])
-                .style("font", "12px sans-serif"),
+            .force("link", d3.forceLink(links).id(d => d.id).distance(90))
+            .force("charge", d3.forceManyBody().strength(-400))
+            .force("x", d3.forceX())
+            .force("y", d3.forceY()),
+
             color = d3.scaleOrdinal(types, d3.schemeCategory10),
             ticked = () => {
                 link.attr("d", linkArc);
@@ -246,18 +281,18 @@ export default class ContactTracingGraph extends NavigationMixin(LightningElemen
                     uniqueLinks = mergedLinks.filter(
                         (s => o =>
                             (k => !s.has(k) && s.add(k))
-                                (linkKeys.map(k => o[k]).join('|'))
+                            (linkKeys.map(k => o[k]).join('|'))
                         )
-                            (new Set)
+                        (new Set)
                     ),
                     mergedNodes = this.data.nodes.concat(result.nodes),
                     nodeKeys = ['id'],
                     uniqueNodes = mergedNodes.filter(
                         (s => o =>
                             (k => !s.has(k) && s.add(k))
-                                (nodeKeys.map(k => o[k]).join('|'))
+                            (nodeKeys.map(k => o[k]).join('|'))
                         )
-                            (new Set)
+                        (new Set)
                     );
                 this.data.links = [...uniqueLinks];
                 this.data.nodes = [...uniqueNodes];
@@ -266,20 +301,26 @@ export default class ContactTracingGraph extends NavigationMixin(LightningElemen
 
             nodeClicked = d => {
                 if (d.target.__data__.type === 'Contact') {
-                    getGraphByContactId({ contactId: d.target.__data__.id })
+                    getGraphByContactId({
+                            contactId: d.target.__data__.id
+                        })
                         .then(result => dedupAndUpdateGraph(result))
                         .catch(error => console.error(error))
                 }
                 if (d.target.__data__.type === 'Encounter') {
-                    getGraphByEncounterId({ encounterId: d.target.__data__.id })
+                    getGraphByEncounterId({
+                            encounterId: d.target.__data__.id
+                        })
                         .then(result => dedupAndUpdateGraph(result))
                         .catch(error => console.error(error))
                 }
                 if (d.target.__data__.type === 'Lead') {
-                    getGraphByLeadId({ leadId: d.target.__data__.id })
+                    getGraphByLeadId({
+                            leadId: d.target.__data__.id
+                        })
                         .then(result => dedupAndUpdateGraph(result))
                         .catch(error => console.error(error))
-                }  
+                }
             },
 
             openPopup = d => {
@@ -289,11 +330,13 @@ export default class ContactTracingGraph extends NavigationMixin(LightningElemen
                     (d.target.__data__.type === 'Root')) {
                     this.popupTitle = d.target.__data__.name;
                     this.isPerson = true;
-                    getContactDetailsById({contactId : this.popupRecordId})
-                    .then(result => {
-                        console.log("contact query",result);
-                        this.personStatus = result.Account.HealthCloudGA__StatusGroup__pc;
-                    })
+                    getContactDetailsById({
+                            contactId: this.popupRecordId
+                        })
+                        .then(result => {
+                            console.log("contact query", result);
+                            this.personStatus = result.Account.HealthCloudGA__StatusGroup__pc;
+                        })
                 }
                 if (d.target.__data__.type === 'Encounter') {
                     this.popupTitle = d.target.__data__.name;
@@ -307,7 +350,14 @@ export default class ContactTracingGraph extends NavigationMixin(LightningElemen
                 this.showPopup = true;
                 d.preventDefault();
                 return false;
-            }
+            },
+
+            svg = d3.select(this.template.querySelector(".d3"))
+            .append('svg')
+            .attr("viewBox", [-width / 2, -height / 2, width, height])
+            .style("font", "12px sans-serif");
+
+        this.svg = svg;
 
         //Create the legend
         svg.selectAll("mydots")
@@ -315,9 +365,13 @@ export default class ContactTracingGraph extends NavigationMixin(LightningElemen
             .enter()
             .append("circle")
             .attr("cx", -width / 2 + 10)
-            .attr("cy", function (d, i) { return -height / 2 + 100 + i * 25 }) // 100 is where the first dot appears. 25 is the distance between dots
+            .attr("cy", function (d, i) {
+                return -height / 2 + 100 + i * 25
+            }) // 100 is where the first dot appears. 25 is the distance between dots
             .attr("r", 7)
-            .style("fill", function (d) { return color(d) })
+            .style("fill", function (d) {
+                return color(d)
+            })
 
         // Add one dot in the legend for each name.
         svg.selectAll("mylabels")
@@ -325,9 +379,15 @@ export default class ContactTracingGraph extends NavigationMixin(LightningElemen
             .enter()
             .append("text")
             .attr("x", -width / 2 + 30)
-            .attr("y", function (d, i) { return -height / 2 + 100 + i * 25 }) // 100 is where the first dot appears. 25 is the distance between dots
-            .style("fill", function (d) { return color(d) })
-            .text(function (d) { return d })
+            .attr("y", function (d, i) {
+                return -height / 2 + 100 + i * 25
+            }) // 100 is where the first dot appears. 25 is the distance between dots
+            .style("fill", function (d) {
+                return color(d)
+            })
+            .text(function (d) {
+                return d
+            })
             .attr("text-anchor", "left")
             .style("alignment-baseline", "middle")
 

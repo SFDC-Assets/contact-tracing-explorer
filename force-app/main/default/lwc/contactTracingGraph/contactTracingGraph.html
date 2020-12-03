@@ -5,6 +5,27 @@
         </template>
         
         <div class="d3" lwc:dom="manual"></div>
+        <div class="pancontrols">
+            <table>
+                <tbody>
+                    <tr>
+                        <td></td>
+                        <td><lightning-button-icon icon-name="utility:chevronup"  alternative-text="Up" title="Up" onclick={panup}></lightning-button-icon></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td><lightning-button-icon icon-name="utility:chevronleft"  alternative-text="Left" title="Left" onclick={panleft}></lightning-button-icon></td>
+                        <td><lightning-button-icon icon-name="utility:diamond"  alternative-text="Center" title="Center" onclick={center}></lightning-button-icon></td>
+                        <td><lightning-button-icon icon-name="utility:chevronright"  alternative-text="Right" title="Right" onclick={panright}></lightning-button-icon></td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td><lightning-button-icon icon-name="utility:chevrondown"  alternative-text="Down" title="Down" onclick={pandown}></lightning-button-icon></td>
+                        <td></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
         <template if:true={showPopup}>
             <div class="popup" style={popupStyle}>
                 <lightning-card title={popupTitle} variant="Narrow" icon-name="custom:custom14" classname="popup">

@@ -16,3 +16,8 @@ text {
   div.popup {
     position:absolute;
   }
+  div.pancontrols {
+    position:absolute;
+    top:20px;
+    right:30px;
+  }
