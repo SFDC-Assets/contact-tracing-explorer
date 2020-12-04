@@ -27,9 +27,13 @@ const types = ["Root", "Contact", "Encounter", "Lead", "Lookup"];
 export default class ContactTracingGraph extends NavigationMixin(LightningElement) {
 
     d3initialized = false;
+    simulation;
     svg;
     legend;
     data;
+    node;
+    link;
+    color;
     popupRecordId;
     @api recordId;
     @api title;
@@ -45,9 +49,12 @@ export default class ContactTracingGraph extends NavigationMixin(LightningElemen
     @track isPerson;
     @track personStatus;
     @track zoom = 4;
+    @track undoDisabled = true;
     xshift = 0;
     yshift = 0;
-    zoomScalingFactors = [4,2,1.5,1,0.75,0.50,0.25];
+    zoomScalingFactors = [4, 2, 1.5, 1, 0.75, 0.50, 0.25];
+    nodeStack = [];
+    linkStack = [];
 
 
     connectedCallback() {
@@ -58,6 +65,7 @@ export default class ContactTracingGraph extends NavigationMixin(LightningElemen
             this.height = 500;
         //for testing
         this.showLegend = true;
+
     }
 
     renderedCallback() {
@@ -106,7 +114,7 @@ export default class ContactTracingGraph extends NavigationMixin(LightningElemen
         let height = this.height;
         let x = this.xshift;
         let y = this.yshift;
-        let scalingFactor = this.zoomScalingFactors[this.zoom-1];
+        let scalingFactor = this.zoomScalingFactors[this.zoom - 1];
         let newWidth = Math.round(parseInt(this.width) * scalingFactor);
         let newHeight = Math.round(parseInt(this.height) * scalingFactor);
         this.svg.attr("viewBox", [-newWidth / 2 + x, -newHeight / 2 + y, newWidth, newHeight])
@@ -148,7 +156,7 @@ export default class ContactTracingGraph extends NavigationMixin(LightningElemen
         this.pan();
     }
 
-    
+
     updateZoom(event) {
         console.log(event.target.value);
         this.zoom = event.target.value;
@@ -165,235 +173,236 @@ export default class ContactTracingGraph extends NavigationMixin(LightningElemen
         });
     }
 
+    undo() {
+        this.data.links = this.linkStack.pop();
+        this.data.nodes = this.nodeStack.pop();
+        this.undoDisabled = this.nodeStack.length == 0;
+        console.log("pop " + this.nodeStack.length);
+        this.update();
+    }
+
     navigateToPopupRecord() {
         this.closePopup();
         this.navigateToRecordViewPage(this.popupRecordId);
     }
 
+
+    drag(simulation) {
+        const
+            dragstarted = (event, d) => {
+                if (!event.active) simulation.alphaTarget(0.3).restart();
+                d.fx = d.x;
+                d.fy = d.y;
+            },
+            dragged = (event, d) => {
+                d.fx = event.x;
+                d.fy = event.y;
+            },
+            dragended = (event, d) => {
+                if (!event.active) simulation.alphaTarget(0);
+                d.fx = null;
+                d.fy = null;
+            }
+
+        return d3.drag()
+            .on("start", dragstarted)
+            .on("drag", dragged)
+            .on("end", dragended);
+    }
+
+    nodeMouseOver(d) {
+        let node = d.target.__data__;
+        console.log("mouse over node " + d.target.__data__.id);
+        nodes.find(n => n.id === link.source).expanded
+    }
+
+    nodeMouseOut(d) {}
+
+    nodeClicked(d) {
+        let node = d.target.__data__;
+        if (node.type === 'Contact') {
+            getGraphByContactId({
+                    contactId: node.id
+                })
+                .then(result => this.dedupAndUpdateGraph(result))
+                .catch(error => console.error(error))
+        }
+        if (node.type === 'Encounter') {
+            getGraphByEncounterId({
+                    encounterId: node.id
+                })
+                .then(result => this.dedupAndUpdateGraph(result))
+                .catch(error => console.error(error))
+        }
+        if (node.type === 'Lead') {
+            getGraphByLeadId({
+                    leadId: node.id
+                })
+                .then(result => this.dedupAndUpdateGraph(result))
+                .catch(error => console.error(error))
+        }
+    }
+
+    openPopup(d) {
+        this.popupRecordId = d.target.__data__.id;
+        if ((d.target.__data__.type === 'Contact') ||
+            (d.target.__data__.type === 'Lead') ||
+            (d.target.__data__.type === 'Root')) {
+            this.popupTitle = d.target.__data__.name;
+            this.isPerson = true;
+            getContactDetailsById({
+                    contactId: this.popupRecordId
+                })
+                .then(result => {
+                    console.log("contact query", result);
+                    this.personStatus = result.Account.HealthCloudGA__StatusGroup__pc;
+                })
+        }
+        if (d.target.__data__.type === 'Encounter') {
+            this.popupTitle = d.target.__data__.name;
+            this.isPerson = false;
+        }
+        let x = d.offsetX
+        let y = d.offsetY;
+        let xstyle = "left : " + Math.round(x) + "px;"
+        let ystyle = "top : " + Math.round(y) + "px;"
+        this.popupStyle = xstyle + ystyle;
+        this.showPopup = true;
+        d.preventDefault();
+        return false;
+    }
+
+    update() {
+        let simulation = this.simulation;
+        const color = d3.scaleOrdinal(types, d3.schemeCategory10);
+
+        // Make a shallow copy to protect against mutation, while
+        // recycling old nodes to preserve position and velocity.
+        const old = new Map(this.node.data().map(d => [d.id, d]));
+        let nodes = this.data.nodes.map(d => Object.assign(old.get(d.id) || {}, d));
+        let links = this.data.links.map(d => Object.assign({}, d));
+
+        this.node = this.node
+            .data(nodes, d => d.id)
+            .join(enter => {
+                var ret = enter.append("g")
+                    .call(this.drag(simulation))
+                    .on('mouseover', this.nodeMouseOver.bind(this))
+                    .on('mouseout', this.nodeMouseOut.bind(this))
+                    .on('dblclick', this.nodeClicked.bind(this))
+                    .on('contextmenu', this.openPopup.bind(this))
+                ret.append("circle")
+                    .attr("stroke", "white")
+                    .attr("stroke-width", 1.5)
+                    .attr("fill", d => color(d.type))
+                    .attr("r", 16);
+                ret.append("image")
+                    .attr("xlink:href", d => this.iconselector(d.type))
+                    .attr("x", "-12px")
+                    .attr("y", "-12px")
+                    .attr("width", "24px")
+                    .attr("height", "24px");
+                ret.append("text")
+                    .attr("x", 20)
+                    .attr("y", "0.31em")
+                    .text(d => d.name)
+                    .clone(true).lower()
+                    .attr("fill", "none")
+                    .attr("stroke", "white")
+                    .attr("stroke-width", 3)
+                return ret;
+            });
+        this.link = this.link
+            .data(links, d => [d.source, d.target])
+            .join("path")
+            .attr("stroke", d => color(d.type))
+            .attr("marker-end", d => `url(${new URL(`#arrow-${d.type}`, location)})`);;
+
+        simulation.nodes(nodes);
+        simulation.force("link").links(links);
+        simulation.on("tick", this.ticked.bind(this));
+        simulation.alpha(1).restart();
+
+    }
+
+    ticked() {
+        this.link.attr("d", this.linkArc);
+        this.node.attr("transform", d => `translate(${d.x},${d.y})`);
+    }
+
+    iconselector(type) {
+        if (type == "Encounter") return encountericon;
+        return usericon;
+    }
+
+    linkArc(d) {
+        //const r = Math.hypot(d.target.x - d.source.x, d.target.y - d.source.y);
+        return `
+      M${d.source.x},${d.source.y}
+      L${d.target.x},${d.target.y}
+    `;
+    }
+
+    dedupAndUpdateGraph(result) {
+        const
+            mergedLinks = this.data.links.concat(result.links),
+            linkKeys = ['source', 'target'],
+            uniqueLinks = mergedLinks.filter(
+                (s => o =>
+                    (k => !s.has(k) && s.add(k))
+                    (linkKeys.map(k => o[k]).join('|'))
+                )
+                (new Set)
+            ),
+            mergedNodes = this.data.nodes.concat(result.nodes),
+            nodeKeys = ['id'],
+            uniqueNodes = mergedNodes.filter(
+                (s => o =>
+                    (k => !s.has(k) && s.add(k))
+                    (nodeKeys.map(k => o[k]).join('|'))
+                )
+                (new Set)
+            );
+        if ((this.data.links.length == uniqueLinks.length) && (this.data.nodes.length == uniqueNodes.length)) {
+            //well, do nothing since nothing has changed
+            console.log("this node has nothing to add to the graph");
+        } else {
+            this.nodeStack.push(this.data.nodes);
+            this.linkStack.push(this.data.links);
+            console.log("push " + this.nodeStack.length);
+            this.undoDisabled = false;
+            this.data.links = [...uniqueLinks];
+            this.data.nodes = [...uniqueNodes];
+            this.update()
+        }
+    }
+
     initializeD3() {
         var
             links = this.data.links.map(d => Object.create(d)),
-            nodes = this.data.nodes.map(d => Object.create(d)),
-            link, node;
+            nodes = this.data.nodes.map(d => Object.create(d))
         const
             height = this.height,
             width = this.width,
-            simulation = d3.forceSimulation(nodes)
-            .force("link", d3.forceLink(links).id(d => d.id).distance(90))
-            .force("charge", d3.forceManyBody().strength(-400))
-            .force("x", d3.forceX())
-            .force("y", d3.forceY()),
+            color = d3.scaleOrdinal(types, d3.schemeCategory10);
 
-            color = d3.scaleOrdinal(types, d3.schemeCategory10),
-            ticked = () => {
-                link.attr("d", linkArc);
-                node.attr("transform", d => `translate(${d.x},${d.y})`);
-            },
-
-            iconselector = type => {
-                if (type == "Encounter") return encountericon;
-                return usericon;
-            },
-
-            update = () => {
-                // Make a shallow copy to protect against mutation, while
-                // recycling old nodes to preserve position and velocity.
-                const old = new Map(node.data().map(d => [d.id, d]));
-                nodes = this.data.nodes.map(d => Object.assign(old.get(d.id) || {}, d));
-                links = this.data.links.map(d => Object.assign({}, d));
-
-                node = node
-                    .data(nodes, d => d.id)
-                    .join(enter => {
-                        var ret = enter.append("g")
-                            .call(drag(simulation))
-                            .on('mouseover', nodeMouseOver)
-                            .on('mouseout', nodeMouseOut)
-                            .on('dblclick', nodeClicked)
-                            .on('contextmenu', openPopup)
-                        ret.append("circle")
-                            .attr("stroke", "white")
-                            .attr("stroke-width", 1.5)
-                            .attr("fill", d => color(d.type))
-                            .attr("r", 16);
-                        ret.append("image")
-                            .attr("xlink:href", d => iconselector(d.type))
-                            .attr("x", "-12px")
-                            .attr("y", "-12px")
-                            .attr("width", "24px")
-                            .attr("height", "24px");
-                        ret.append("text")
-                            .attr("x", 20)
-                            .attr("y", "0.31em")
-                            .text(d => d.name)
-                            .clone(true).lower()
-                            .attr("fill", "none")
-                            .attr("stroke", "white")
-                            .attr("stroke-width", 3)
-                        return ret;
-                    });
-                link = link
-                    .data(links, d => [d.source, d.target])
-                    .join("path")
-                    .attr("stroke", d => color(d.type))
-                    .attr("marker-end", d => `url(${new URL(`#arrow-${d.type}`, location)})`);;
-
-                simulation.nodes(nodes);
-                simulation.force("link").links(links);
-                simulation.on("tick", ticked);
-                simulation.alpha(1).restart();
-
-            },
-
-            linkArc = d => {
-                const r = Math.hypot(d.target.x - d.source.x, d.target.y - d.source.y);
-                return `
-              M${d.source.x},${d.source.y}
-              L${d.target.x},${d.target.y}
-            `;
-                /* use this if you like curvy lines
-                return `
-                  M${d.source.x},${d.source.y}
-                  A${r},${r} 0 0,1 ${d.target.x},${d.target.y}
-                `;*/
-            },
-
-            drag = simulation => {
-                const
-                    dragstarted = (event, d) => {
-                        if (!event.active) simulation.alphaTarget(0.3).restart();
-                        d.fx = d.x;
-                        d.fy = d.y;
-                    },
-                    dragged = (event, d) => {
-                        d.fx = event.x;
-                        d.fy = event.y;
-                    },
-                    dragended = (event, d) => {
-                        if (!event.active) simulation.alphaTarget(0);
-                        d.fx = null;
-                        d.fy = null;
-                    }
-
-                return d3.drag()
-                    .on("start", dragstarted)
-                    .on("drag", dragged)
-                    .on("end", dragended);
-            },
-
-
-            nodeMouseOver = d => {
-                console.log("mouse over node", d);
-                //node.style('fill', "#B8B8B8")
-                //d.target.setAttribute("style", "fill:#FF0000");
-                //d3.select(this).style('fill', '#69b3b2')
-                // Highlight the connections
-                // link
-                //    .style('stroke', function (link_d) {
-                //        return link_d.source === d.target.__data__ || link_d.target === d.target.__data__ ? '#000000' : color(link_d.type);
-                //    })
-                /*.style('stroke-width', function (link_d) {
-                    return link_d.source === d.target.__data__ || link_d.target === d.target.__data__ ? 2 : 1.5;
-                })*/
-            },
-            nodeMouseOut = d => {
-                //d.target.setAttribute("style", "fill:#000000");
-                //link.style('stroke', dlink => color(dlink.type))
-                //.style('stroke-width', '1.5')
-            },
-
-            dedupAndUpdateGraph = result => {
-                const
-                    mergedLinks = this.data.links.concat(result.links),
-                    linkKeys = ['source', 'target'],
-                    uniqueLinks = mergedLinks.filter(
-                        (s => o =>
-                            (k => !s.has(k) && s.add(k))
-                            (linkKeys.map(k => o[k]).join('|'))
-                        )
-                        (new Set)
-                    ),
-                    mergedNodes = this.data.nodes.concat(result.nodes),
-                    nodeKeys = ['id'],
-                    uniqueNodes = mergedNodes.filter(
-                        (s => o =>
-                            (k => !s.has(k) && s.add(k))
-                            (nodeKeys.map(k => o[k]).join('|'))
-                        )
-                        (new Set)
-                    );
-                this.data.links = [...uniqueLinks];
-                this.data.nodes = [...uniqueNodes];
-                update()
-            },
-
-            nodeClicked = d => {
-                if (d.target.__data__.type === 'Contact') {
-                    getGraphByContactId({
-                            contactId: d.target.__data__.id
-                        })
-                        .then(result => dedupAndUpdateGraph(result))
-                        .catch(error => console.error(error))
-                }
-                if (d.target.__data__.type === 'Encounter') {
-                    getGraphByEncounterId({
-                            encounterId: d.target.__data__.id
-                        })
-                        .then(result => dedupAndUpdateGraph(result))
-                        .catch(error => console.error(error))
-                }
-                if (d.target.__data__.type === 'Lead') {
-                    getGraphByLeadId({
-                            leadId: d.target.__data__.id
-                        })
-                        .then(result => dedupAndUpdateGraph(result))
-                        .catch(error => console.error(error))
-                }
-            },
-
-            openPopup = d => {
-                this.popupRecordId = d.target.__data__.id;
-                if ((d.target.__data__.type === 'Contact') ||
-                    (d.target.__data__.type === 'Lead') ||
-                    (d.target.__data__.type === 'Root')) {
-                    this.popupTitle = d.target.__data__.name;
-                    this.isPerson = true;
-                    getContactDetailsById({
-                            contactId: this.popupRecordId
-                        })
-                        .then(result => {
-                            console.log("contact query", result);
-                            this.personStatus = result.Account.HealthCloudGA__StatusGroup__pc;
-                        })
-                }
-                if (d.target.__data__.type === 'Encounter') {
-                    this.popupTitle = d.target.__data__.name;
-                    this.isPerson = false;
-                }
-                let x = d.offsetX
-                let y = d.offsetY;
-                let xstyle = "left : " + Math.round(x) + "px;"
-                let ystyle = "top : " + Math.round(y) + "px;"
-                this.popupStyle = xstyle + ystyle;
-                this.showPopup = true;
-                d.preventDefault();
-                return false;
-            },
-
-            svg = d3.select(this.template.querySelector(".d3"))
+        this.svg = d3.select(this.template.querySelector(".d3"))
             .append('svg')
             .attr("viewBox", [-width / 2, -height / 2, width, height])
-            .style("font", "12px sans-serif"),
+            .style("font", "12px sans-serif")
 
-            legend = svg.append("g")
+        this.legend = this.svg.append("g")
             .attr("fill", "none")
             .attr("stroke-width", 1.5);
 
-        this.svg = svg;
-        this.legend = legend;
+        this.simulation = d3.forceSimulation(nodes)
+            .force("link", d3.forceLink(links).id(d => d.id).distance(90))
+            .force("charge", d3.forceManyBody().strength(-400))
+            .force("x", d3.forceX())
+            .force("y", d3.forceY())
 
         //Create the legend
-        legend.selectAll("mydots")
+        this.legend.selectAll("mydots")
             .data(types)
             .enter()
             .append("circle")
@@ -407,7 +416,7 @@ export default class ContactTracingGraph extends NavigationMixin(LightningElemen
             })
 
         // Add one dot in the legend for each name.
-        legend.selectAll("mylabels")
+        this.legend.selectAll("mylabels")
             .data(types)
             .enter()
             .append("text")
@@ -425,7 +434,7 @@ export default class ContactTracingGraph extends NavigationMixin(LightningElemen
             .style("alignment-baseline", "middle")
 
         //Initialize the svg drawing
-        svg.append("defs").selectAll("marker")
+        this.svg.append("defs").selectAll("marker")
             .data(types)
             .join("marker")
             .attr("id", d => `arrow-${d}`)
@@ -439,42 +448,41 @@ export default class ContactTracingGraph extends NavigationMixin(LightningElemen
             .attr("fill", color)
             .attr("d", "M0,-5L10,0L0,5");
 
-        link = svg.append("g")
+        this.link = this.svg.append("g")
             .attr("fill", "none")
             .attr("stroke-width", 1.5)
             .selectAll("path")
             .data(links)
             .join("path")
-            .attr("stroke", d => color(d.type))
-            .attr("marker-end", d => `url(${new URL(`#arrow-${d.type}`, location)})`);
+            .attr("stroke", d => color(d.type));
 
-        node = svg.append("g")
+        this.node = this.svg.append("g")
             .attr("fill", "currentColor")
             .attr("stroke-linecap", "round")
             .attr("stroke-linejoin", "round")
             .selectAll("g")
             .data(nodes)
             .join("g")
-            .call(drag(simulation))
-            .on('mouseover', nodeMouseOver)
-            .on('mouseout', nodeMouseOut)
-            .on('dblclick', nodeClicked)
-            .on('contextmenu', openPopup);
+            .call(this.drag(this.simulation))
+            .on('mouseover', this.nodeMouseOver.bind(this))
+            .on('mouseout', this.nodeMouseOut.bind(this))
+            .on('dblclick', this.nodeClicked.bind(this))
+            .on('contextmenu', this.openPopup.bind(this));
 
-        node.append("circle")
+        this.node.append("circle")
             .attr("stroke", "white")
             .attr("stroke-width", 1.5)
             .attr("fill", d => color(d.type))
             .attr("r", 16);
 
-        node.append("image")
-            .attr("xlink:href", d => iconselector(d.type))
+        this.node.append("image")
+            .attr("xlink:href", d => this.iconselector(d.type))
             .attr("x", "-12px")
             .attr("y", "-12px")
             .attr("width", "24px")
             .attr("height", "24px");
 
-        node.append("text")
+        this.node.append("text")
             .attr("x", 20)
             .attr("y", "0.31em")
             .text(d => d.name)
@@ -483,7 +491,7 @@ export default class ContactTracingGraph extends NavigationMixin(LightningElemen
             .attr("stroke", "white")
             .attr("stroke-width", 3);
 
-        simulation.on("tick", ticked);
+        this.simulation.on("tick", this.ticked.bind(this));
     }
 
 

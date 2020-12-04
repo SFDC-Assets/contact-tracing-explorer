@@ -6,12 +6,12 @@ double click to expand nodes, right click to get context on the node.
 ## to-dos
 Add in some usability features:
 
-zoom in / zoom out of graph
-move graph on x / y axis
-recenter graph on root node
+done -- zoom in / zoom out of graph  
+done -- move graph on x / y axis
+done -- recenter graph on root node
 add date filter capability
 relabel the legend
-collapse nodes (collapse attached nodes, remove orphaned nodes)
+done -- add undo feature to collapse nodes
 
 Bugs:
 fix popup dialog x,y issue in firefox.
