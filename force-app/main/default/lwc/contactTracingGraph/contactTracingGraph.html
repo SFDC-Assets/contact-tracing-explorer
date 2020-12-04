@@ -7,7 +7,8 @@
         <div class="pancontrols">
             <div class="slds-grid">
                 <div class="slds-col" style="padding-top:32px;padding-right:10px">
-                    <lightning-button-icon icon-name="utility:undo" alternative-text="Undo" title="Undo" onclick={undo} disabled={undoDisabled}></lightning-button-icon>
+                    <lightning-button-icon icon-name="utility:undo" alternative-text="Undo" title="Undo" onclick={undo}
+                        disabled={undoDisabled}></lightning-button-icon>
                 </div>
                 <div class="slds-col">
                     <div class="slds-form-element">
@@ -19,12 +20,13 @@
                         </label>
                         <div class="slds-form-element__control">
                             <div class="slds-slider">
-                                <input type="range" id="slider-id-01" class="slds-slider__range" min="1" max="7" step="1" value={zoom} onchange={updateZoom}/>
+                                <input type="range" id="slider-id-01" class="slds-slider__range" min="1" max="7"
+                                    step="1" value={zoom} onchange={updateZoom} />
                                 <span class="slds-slider__value" aria-hidden="true">{zoom}</span>
                             </div>
                         </div>
                     </div>
-                   
+
                 </div>
                 <div class="slds-col">
                     <table>
@@ -63,27 +65,23 @@
                     </table>
                 </div>
             </div>
-
-
-
         </div>
-        <div class="zoomcontrols">
+
+
+        <div class="popup slds-hide">
+            <lightning-card title={popupTitle} variant="Narrow" icon-name="custom:custom14">
+                <lightning-button-icon icon-name="utility:close" variant="container" alternative-text="Show More"
+                    slot="actions" onclick={closePopup}></lightning-button-icon>
+                <div class="slds-var-m-around_medium">
+                    <button class="slds-button" onclick={navigateToPopupRecord}>Navigate to record</button>
+                    <template if:true={isPerson}>
+                        <br />
+                        Status Group: {personStatus}
+                    </template>
+                </div>
+            </lightning-card>
         </div>
-        <template if:true={showPopup}>
-            <div class="popup" style={popupStyle}>
-                <lightning-card title={popupTitle} variant="Narrow" icon-name="custom:custom14">
-                    <lightning-button-icon icon-name="utility:close" variant="container" alternative-text="Show More"
-                        slot="actions" onclick={closePopup}></lightning-button-icon>
-                    <div class="slds-var-m-around_medium">
-                        <button class="slds-button" onclick={navigateToPopupRecord}>Navigate to record</button>
-                        <template if:true={isPerson}>
-                            <br />
-                            Status Group: {personStatus}
-                        </template>
-                    </div>
-                </lightning-card>
-            </div>
-        </template>
+
     </div>
 
 </template>

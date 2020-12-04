@@ -12,6 +12,7 @@ done -- recenter graph on root node
 add date filter capability
 relabel the legend
 done -- add undo feature to collapse nodes
+complete the popup card and make pretty
 
 Bugs:
-fix popup dialog x,y issue in firefox.
+done --fix popup dialog x,y issue in firefox.

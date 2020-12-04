@@ -12,18 +12,12 @@
     </targets>
     <targetConfigs>
         <targetConfig targets="lightning__RecordPage">
-            <property name="title" type="String">
-            </property>
-            <property name="width" type="Integer">
-            </property>
-            <property name="height" type="Integer">
-            </property>
-            <property name="legendWidth" type="Integer" default="100">
-            </property>
-            <property name="legendHeight" type="Integer" default="500">
-            </property>
-            <property name="showLegend" type="Boolean" default="true">
-            </property>
+            <property name="title" type="String"/>
+            <property name="width" type="Integer"/>
+            <property name="height" type="Integer"/>
+            <property name="legendWidth" type="Integer" default="100"/>
+            <property name="legendHeight" type="Integer" default="500"/>
+            <property name="showLegend" type="Boolean" default="true"/>
             <objects>
                 <object>
                     Account

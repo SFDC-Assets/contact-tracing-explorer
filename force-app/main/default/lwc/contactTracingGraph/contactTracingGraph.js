@@ -42,8 +42,6 @@ export default class ContactTracingGraph extends NavigationMixin(LightningElemen
     @api showLegend;
     @api legendWidth; //delete me
     @api legendHeight; //delete me
-    @track showPopup = false;
-    @track popupStyle;
     @track popupTitle;
     @track hasTitle;
     @track isPerson;
@@ -106,7 +104,7 @@ export default class ContactTracingGraph extends NavigationMixin(LightningElemen
     }
 
     closePopup() {
-        this.showPopup = false;
+        this.template.querySelector(".popup").classList.add("slds-hide");
     }
 
     pan() {
@@ -262,12 +260,11 @@ export default class ContactTracingGraph extends NavigationMixin(LightningElemen
             this.popupTitle = d.target.__data__.name;
             this.isPerson = false;
         }
-        let x = d.layerX;
-        let y = d.layerY;
-        let xstyle = "left : " + Math.round(x) + "px;"
-        let ystyle = "top : " + Math.round(y) + "px;"
-        this.popupStyle = xstyle + ystyle;
-        this.showPopup = true;
+        let xstyle = "left : " + Math.round(d.layerX) + "px;",
+            ystyle = "top : " + Math.round(d.layerY) + "px;",
+            popup = this.template.querySelector(".popup");
+        popup.setAttribute("style", xstyle + ystyle);
+        popup.classList.remove("slds-hide");
         d.preventDefault();
         return false;
     }
