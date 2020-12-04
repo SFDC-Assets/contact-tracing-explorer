@@ -49,3 +49,7 @@ div.zoomcontrols {
   top: 200px;
   right:30px;
 }
+
+image {
+  pointer-events: none;
+}

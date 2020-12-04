@@ -262,8 +262,8 @@ export default class ContactTracingGraph extends NavigationMixin(LightningElemen
             this.popupTitle = d.target.__data__.name;
             this.isPerson = false;
         }
-        let x = d.offsetX
-        let y = d.offsetY;
+        let x = d.layerX;
+        let y = d.layerY;
         let xstyle = "left : " + Math.round(x) + "px;"
         let ystyle = "top : " + Math.round(y) + "px;"
         this.popupStyle = xstyle + ystyle;
