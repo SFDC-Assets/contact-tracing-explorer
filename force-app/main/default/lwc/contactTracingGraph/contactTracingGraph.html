@@ -67,19 +67,8 @@
             </div>
         </div>
 
-
         <div class="popup slds-hide">
-            <lightning-card title={popupTitle} variant="Narrow" icon-name="custom:custom14">
-                <lightning-button-icon icon-name="utility:close" variant="container" alternative-text="Show More"
-                    slot="actions" onclick={closePopup}></lightning-button-icon>
-                <div class="slds-var-m-around_medium">
-                    <button class="slds-button" onclick={navigateToPopupRecord}>Navigate to record</button>
-                    <template if:true={isPerson}>
-                        <br />
-                        Status Group: {personStatus}
-                    </template>
-                </div>
-            </lightning-card>
+            <c-contact-tracing-graph-popup recordid={popupRecordId} onclose={closePopup} onready={displayPopup}></c-contact-tracing-graph-popup>
         </div>
 
     </div>

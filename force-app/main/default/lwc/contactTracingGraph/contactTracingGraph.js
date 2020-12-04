@@ -45,7 +45,7 @@ export default class ContactTracingGraph extends NavigationMixin(LightningElemen
     @track popupTitle;
     @track hasTitle;
     @track isPerson;
-    @track personStatus;
+    @track person;
     @track zoom = 4;
     @track undoDisabled = true;
     xshift = 0;
@@ -107,6 +107,10 @@ export default class ContactTracingGraph extends NavigationMixin(LightningElemen
         this.template.querySelector(".popup").classList.add("slds-hide");
     }
 
+    displayPopup() {
+        this.template.querySelector(".popup").classList.remove("slds-hide");
+    }
+
     pan() {
         let width = this.width;
         let height = this.height;
@@ -153,7 +157,6 @@ export default class ContactTracingGraph extends NavigationMixin(LightningElemen
         this.yshift = 0;
         this.pan();
     }
-
 
     updateZoom(event) {
         console.log(event.target.value);
@@ -209,9 +212,7 @@ export default class ContactTracingGraph extends NavigationMixin(LightningElemen
     }
 
     nodeMouseOver(d) {
-        let node = d.target.__data__;
         console.log("mouse over node " + d.target.__data__.id);
-        nodes.find(n => n.id === link.source).expanded
     }
 
     nodeMouseOut(d) {}
@@ -242,42 +243,23 @@ export default class ContactTracingGraph extends NavigationMixin(LightningElemen
     }
 
     openPopup(d) {
+        d.preventDefault();
+        this.closePopup(); //just in case it's already open
         this.popupRecordId = d.target.__data__.id;
-        if ((d.target.__data__.type === 'Contact') ||
-            (d.target.__data__.type === 'Lead') ||
-            (d.target.__data__.type === 'Root')) {
-            this.popupTitle = d.target.__data__.name;
-            this.isPerson = true;
-            getContactDetailsById({
-                    contactId: this.popupRecordId
-                })
-                .then(result => {
-                    console.log("contact query", result);
-                    this.personStatus = result.Account.HealthCloudGA__StatusGroup__pc;
-                })
-        }
-        if (d.target.__data__.type === 'Encounter') {
-            this.popupTitle = d.target.__data__.name;
-            this.isPerson = false;
-        }
         let xstyle = "left : " + Math.round(d.layerX) + "px;",
             ystyle = "top : " + Math.round(d.layerY) + "px;",
             popup = this.template.querySelector(".popup");
         popup.setAttribute("style", xstyle + ystyle);
-        popup.classList.remove("slds-hide");
-        d.preventDefault();
-        return false;
     }
 
     update() {
-        let simulation = this.simulation;
-        const color = d3.scaleOrdinal(types, d3.schemeCategory10);
+        const
+            color = d3.scaleOrdinal(types, d3.schemeCategory10),
+            old = new Map(this.node.data().map(d => [d.id, d]));
 
-        // Make a shallow copy to protect against mutation, while
-        // recycling old nodes to preserve position and velocity.
-        const old = new Map(this.node.data().map(d => [d.id, d]));
-        let nodes = this.data.nodes.map(d => Object.assign(old.get(d.id) || {}, d));
-        let links = this.data.links.map(d => Object.assign({}, d));
+        let nodes = this.data.nodes.map(d => Object.assign(old.get(d.id) || {}, d)),
+            links = this.data.links.map(d => Object.assign({}, d)),
+            simulation = this.simulation;
 
         this.node = this.node
             .data(nodes, d => d.id)
@@ -319,7 +301,6 @@ export default class ContactTracingGraph extends NavigationMixin(LightningElemen
         simulation.force("link").links(links);
         simulation.on("tick", this.ticked.bind(this));
         simulation.alpha(1).restart();
-
     }
 
     ticked() {
@@ -360,13 +341,14 @@ export default class ContactTracingGraph extends NavigationMixin(LightningElemen
                 )
                 (new Set)
             );
+
         if ((this.data.links.length == uniqueLinks.length) && (this.data.nodes.length == uniqueNodes.length)) {
             //well, do nothing since nothing has changed
+            //might be nice to alert the user there is no change
             console.log("this node has nothing to add to the graph");
         } else {
             this.nodeStack.push(this.data.nodes);
             this.linkStack.push(this.data.links);
-            console.log("push " + this.nodeStack.length);
             this.undoDisabled = false;
             this.data.links = [...uniqueLinks];
             this.data.nodes = [...uniqueNodes];
@@ -378,6 +360,7 @@ export default class ContactTracingGraph extends NavigationMixin(LightningElemen
         var
             links = this.data.links.map(d => Object.create(d)),
             nodes = this.data.nodes.map(d => Object.create(d))
+
         const
             height = this.height,
             width = this.width,

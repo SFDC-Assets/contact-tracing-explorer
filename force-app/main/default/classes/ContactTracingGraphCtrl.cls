@@ -84,7 +84,7 @@ public with sharing class ContactTracingGraphCtrl {
 	@AuraEnabled
 	public static Contact getContactDetailsById(String contactId){
 		try {
-			return [SELECT Id, Name, IsPersonAccount, Account.HealthCloudGA__StatusGroup__pc
+			return [SELECT Id, Name, IsPersonAccount, Account.HealthCloudGA__StatusGroup__pc, Email, Phone
 			 FROM Contact
 			 WHERE Id = :contactId
 			 LIMIT 1];
@@ -92,6 +92,31 @@ public with sharing class ContactTracingGraphCtrl {
 			throw new AuraHandledException(e.getMessage());
 		}
 	}
+
+	@AuraEnabled
+	public static Lead getLeadDetailsById(String leadId){
+		try {
+			return [SELECT Id, Name, HealthCloudGA__StatusGroup__c, Email, Phone
+			 FROM Lead
+			 WHERE Id = :leadId
+			 LIMIT 1];
+		} catch (Exception e) {
+			throw new AuraHandledException(e.getMessage());
+		}
+	}
+
+	@AuraEnabled
+	public static ContactEncounter getEncounterDetailsById(String encounterId){
+		try {
+			return [SELECT Id, Name, Description, EncounterDuration, EstimatedParticipantCount, StartTime, LocationId, Location.Name
+			 FROM ContactEncounter
+			 WHERE Id = :encounterId
+			 LIMIT 1];
+		} catch (Exception e) {
+			throw new AuraHandledException(e.getMessage());
+		}
+	}
+
 
 	@AuraEnabled
 	public static Graph getGraphByContactId(String contactId) {

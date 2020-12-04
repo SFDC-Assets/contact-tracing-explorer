@@ -1,0 +1,49 @@
+<template>
+    <lightning-card title={title} variant="Narrow" icon-name="custom:custom14">
+        <lightning-button-icon icon-name="utility:close" variant="container" alternative-text="Show More" slot="actions"
+            onclick={close}></lightning-button-icon>
+        <div class="slds-var-m-around_medium">
+            <button class="slds-button" onclick={navigateToPopupRecord}>Navigate to record</button>
+            <div class="person slds-hide">
+                <table>
+                    <tbody>
+                        <tr>
+                            <td>Type:</td>
+                            <td>{person.type}</td>
+                        </tr>
+                        <tr>
+                            <td>Status Group:</td>
+                            <td>{person.status}</td>
+                        </tr>
+                        <tr>
+                            <td>Email:</td>
+                            <td>{person.email}</td>
+                        </tr>
+                        <tr>
+                            <td>Phone:</td>
+                            <td>{person.phone}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="encounter slds-hide">
+                <table>
+                    <tbody>
+                        <tr>
+                            <td>Duration:</td>
+                            <td>{encounter.duration}</td>
+                        </tr>
+                        <tr>
+                            <td>Start Time:</td>
+                            <td>{encounter.startTime}</td>
+                        </tr>
+                        <tr>
+                            <td>Location:</td>
+                            <td>{encounter.location}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </lightning-card>
+</template>
