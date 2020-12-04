@@ -14,19 +14,18 @@
         <div class="form">
             <div class="filter slds-grid slds-wrap">
                 <div class="slds-col slds-size_1-of-1" style="padding-top:1em">
-                    <lightning-input type="toggle" label="Filter out all encounters before a certain time"
-                        name="toggle_before" value={doBeforeFilter} onchange={toggleBeforeFilter}></lightning-input>
+                   
                     <lightning-input type="datetime" name="before" label="Exclude encounters before"
                         value={beforeDateTime} onchange={updateBeforeDateTime}></lightning-input>
                 </div>
                 <div class="slds-col slds-size_1-of-1">
-                    <lightning-input type="toggle" label="Filter out all encounters after a certain time"
-                        name="toggle_after" value={doAfterFilter} onchange={toggleAfterFilter}></lightning-input>
+                   
                     <lightning-input type="datetime" name="after" label="Exclude encounters after" value={afterDateTime}
                         onchange={updateAfterDateTime}></lightning-input>
                 </div>
                 <div class="slds-col slds-size_1-of-1" style="padding-bottom:1em">
                     <lightning-button name="Apply" label="Apply Filter" onclick={apply}></lightning-button>
+                    <lightning-button name="Clear" label="Clear Filter" onclick={clear}></lightning-button>
                 </div>
             </div>
         </div>

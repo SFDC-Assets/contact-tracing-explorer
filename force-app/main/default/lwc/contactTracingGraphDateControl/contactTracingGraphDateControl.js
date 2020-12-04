@@ -7,8 +7,6 @@ import {
 export default class ContactTracingGraphDateControl extends LightningElement {
 
     @api collapse;
-    @track doBeforeFilter = false;
-    @track doAfterFilter = false;
     @track beforeDateTime;
     @track afterDateTime;
 
@@ -28,13 +26,6 @@ export default class ContactTracingGraphDateControl extends LightningElement {
         this.setCollapseClasses();
     }
 
-    toggleBeforeFilter() {
-        this.doBeforeFilter = !this.doBeforeFilter;
-    }
-
-    toggleAfterFilter() {
-        this.doAfterFilter = !this.doAfterFilter;
-    }
     updateBeforeDateTime(event) {
         this.beforeDateTime = event.target.value;
     }
@@ -46,12 +37,15 @@ export default class ContactTracingGraphDateControl extends LightningElement {
     apply() {
         this.dispatchEvent(new CustomEvent("datechange", {
             detail: {
-                doBeforeFilter: this.doBeforeFilter,
-                doAfterFilter: this.doAfterFilter,
                 beforeDateTime: this.beforeDateTime,
                 afterDateTime: this.afterDateTime,
             }
         }))
+    }
+
+    clear() {
+        this.beforeDateTime = null;
+        this.afterDateTime = null;
     }
 
 

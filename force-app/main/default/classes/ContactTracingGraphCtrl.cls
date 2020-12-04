@@ -64,18 +64,13 @@ public with sharing class ContactTracingGraphCtrl {
 	}
 
 	@AuraEnabled
-	public static Graph getGraphByAccountId(String accountId){
-		return getGraphByAccountId(accountId, false);
-	}
-
-	@AuraEnabled
-	public static Graph getGraphByAccountId(String accountId, Boolean isRoot){
+	public static Graph getGraphByAccountId(String accountId, Boolean isRoot, DateTime beforedate, DateTime afterdate){
 		try {
 			if (accountId == null) {
 				accountId = '0013t00001ZufHGAAZ';
 			}
 			Account acct = [SELECT Id, PersonContactId from Account where Id = :accountId LIMIT 1];
-			return getGraphByContactId(acct.PersonContactId,isRoot);
+			return getGraphByContactId(acct.PersonContactId,isRoot, beforedate, afterdate);
 		} catch (Exception e) {
 			throw new AuraHandledException(e.getMessage());
 		}
@@ -117,20 +112,29 @@ public with sharing class ContactTracingGraphCtrl {
 		}
 	}
 
-
-	@AuraEnabled
-	public static Graph getGraphByContactId(String contactId) {
-		return getGraphByContactId(contactId, false);
+	private static String buildDateWhereClause(DateTime beforedate, DateTime afterdate) {
+		String whereClause = '';
+		if ((beforedate != null) && (afterdate == null)) {
+			whereClause = ' AND StartTime >= :beforedate ';
+		}
+		if ((beforedate == null) && (afterdate != null)) {
+			whereClause = ' AND StartTime <= :afterdate ';
+		}
+		if ((beforedate != null) && (afterdate != null)) {
+			whereClause = ' AND StartTime >= :beforedate AND StartTime <= :afterdate ';
+		}
+		return whereClause;
 	}
 
+
 	@AuraEnabled
-	public static Graph getGraphByContactId(String contactId, Boolean isRoot){
+	public static Graph getGraphByContactId(String contactId, Boolean isRoot, Datetime beforedate, Datetime afterdate){
 		Set<String> encounterIds = new Set<String>();
 		Graph graph = new Graph();
 		if (isRoot == null) {
 			isRoot = false;
 		}
-		//try {
+		try {
 			Contact contact =
 			[SELECT Id, Name, IsPersonAccount, Account.HealthCloudGA__StatusGroup__pc
 			 FROM Contact
@@ -138,10 +142,9 @@ public with sharing class ContactTracingGraphCtrl {
 			 LIMIT 1];
 			 System.debug(contact.Id + ' ' + contact.Name + ' ' + isRoot);
 			graph.addNode(contact.Id, contact.Name, isRoot ? TYPE_ROOT : TYPE_CONTACT);
-			ContactEncounterParticipant[] participants =
-			[SELECT Id, Name, ContactId, LeadId, ContactEncounterId
-			 FROM ContactEncounterParticipant
-			 WHERE ContactId = :contactId];
+			String whereClause = buildDateWhereClause(beforedate, afterdate);
+			string soqlStatement = 'SELECT Id, Name, ContactId, LeadId, ContactEncounterId FROM ContactEncounterParticipant WHERE ContactId = :contactId' + whereClause;
+			ContactEncounterParticipant[] participants = Database.query(soqlStatement);
 			for ( ContactEncounterParticipant participant : participants ) {
 				encounterIds.add(participant.ContactEncounterId);
 				graph.addLink(contactId,participant.ContactEncounterId,TYPE_LOOKUP);
@@ -154,14 +157,14 @@ public with sharing class ContactTracingGraphCtrl {
 				graph.addNode(encounter.Id, encounter.Name, TYPE_ENCOUNTER);
 			}
 			return graph;
-		//} catch (Exception e) {
-		//	System.debug(e.getStackTraceString());
-		//	throw new AuraHandledException(e.getMessage());
-		//}
+		} catch (Exception e) {
+			System.debug(e.getStackTraceString());
+			throw new AuraHandledException(e.getMessage());
+		}
 	}
 
 	@AuraEnabled
-	public static Graph getGraphByLeadId(String leadId){
+	public static Graph getGraphByLeadId(String leadId, DateTime beforedate, DateTime afterdate){
 		Set<String> encounterIds = new Set<String>();
 		Graph graph = new Graph();
 
@@ -171,10 +174,9 @@ public with sharing class ContactTracingGraphCtrl {
 			 WHERE Id = :leadId
 			            LIMIT 1];
 			graph.addNode(lead.Id, lead.Name, TYPE_LEAD);
-			ContactEncounterParticipant[] participants =
-			[SELECT Id, Name, ContactId, LeadId, ContactEncounterId
-			 FROM ContactEncounterParticipant
-			 WHERE LeadId = :leadId];
+			String whereClause = buildDateWhereClause(beforedate, afterdate);
+			String soql = 'SELECT Id, Name, ContactId, LeadId, ContactEncounterId FROM ContactEncounterParticipant WHERE LeadId = :leadId' + whereClause;
+			ContactEncounterParticipant[] participants = Database.query(soql);
 			for ( ContactEncounterParticipant participant : participants ) {
 				encounterIds.add(participant.ContactEncounterId);
 				graph.addLink(leadId,participant.ContactEncounterId,TYPE_LOOKUP);
@@ -193,7 +195,7 @@ public with sharing class ContactTracingGraphCtrl {
 	}
 
 	@AuraEnabled
-	public static Graph getGraphByEncounterId(String encounterId){
+	public static Graph getGraphByEncounterId(String encounterId, DateTime beforedate, DateTime afterdate){
 		Set<String> contactIds = new Set<String>();
 		Set<String> leadIds = new Set<String>();
 		Graph graph = new Graph();
@@ -204,10 +206,9 @@ public with sharing class ContactTracingGraphCtrl {
 			 WHERE Id = :encounterId
 			            LIMIT 1];
 			graph.addNode(encounter.Id, encounter.Name, TYPE_ENCOUNTER);
-			ContactEncounterParticipant[] participants =
-			[SELECT Id, Name, ContactId, LeadId, ContactEncounterId
-			 FROM ContactEncounterParticipant
-			 WHERE ContactEncounterId = :encounterId];
+			String whereClause = buildDateWhereClause(beforedate, afterdate);
+			String soql = 'SELECT Id, Name, ContactId, LeadId, ContactEncounterId FROM ContactEncounterParticipant WHERE ContactEncounterId = :encounterId' + whereClause;
+			ContactEncounterParticipant[] participants = Database.query(soql);
 			for ( ContactEncounterParticipant participant : participants ) {
 				contactIds.add(participant.ContactId);
 				leadIds.add(participant.LeadId);

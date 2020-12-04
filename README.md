@@ -13,7 +13,7 @@ Add in some usability features:
 done -- zoom in / zoom out of graph  
 done -- move graph on x / y axis
 done -- recenter graph on root node
-add date filter capability
+done -- add date filter capability
 done -- relabel the legend
 done -- add undo feature to collapse nodes
 done -- complete the popup card and make pretty

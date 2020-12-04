@@ -194,6 +194,19 @@ export default class ContactTracingGraph extends NavigationMixin(LightningElemen
         this.doAfterFilter = event.detail.doAfterFilter;
         this.beforeDateTime = event.detail.beforeDateTime;
         this.afterDateTime = event.detail.afterDateTime;
+        getGraphByAccountId({
+            accountId: this.recordId,
+            beforedate: this.beforeDateTime,
+            afterdate: this.afterDateTime,
+            isRoot: true
+        })
+        .then(result => {
+            this.data = result;
+            this.update()
+        })
+        .catch(error => {
+            console.error(error)
+        })
     }
 
 
@@ -230,21 +243,28 @@ export default class ContactTracingGraph extends NavigationMixin(LightningElemen
         let node = d.target.__data__;
         if (node.type === 'Contact') {
             getGraphByContactId({
-                    contactId: node.id
+                    contactId: node.id,
+                    isRoot : false,
+                    beforedate : this.beforeDateTime,
+                    afterdate : this.afterDateTime
                 })
                 .then(result => this.dedupAndUpdateGraph(result))
                 .catch(error => console.error(error))
         }
         if (node.type === 'Encounter') {
             getGraphByEncounterId({
-                    encounterId: node.id
+                    encounterId: node.id,
+                    beforedate : this.beforeDateTime,
+                    afterdate : this.afterDateTime
                 })
                 .then(result => this.dedupAndUpdateGraph(result))
                 .catch(error => console.error(error))
         }
         if (node.type === 'Lead') {
             getGraphByLeadId({
-                    leadId: node.id
+                    leadId: node.id,
+                    beforedate : this.beforeDateTime,
+                    afterdate : this.afterDateTime
                 })
                 .then(result => this.dedupAndUpdateGraph(result))
                 .catch(error => console.error(error))
