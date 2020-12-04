@@ -35,6 +35,8 @@ export default class ContactTracingGraph extends NavigationMixin(LightningElemen
     link;
     color;
     popupRecordId;
+    doBeforeFilter;
+    doAfterFilter;
     @api recordId;
     @api title;
     @api width;
@@ -185,6 +187,13 @@ export default class ContactTracingGraph extends NavigationMixin(LightningElemen
     navigateToPopupRecord() {
         this.closePopup();
         this.navigateToRecordViewPage(this.popupRecordId);
+    }
+
+    changeDateFilter(event) {
+        this.doBeforeFilter = event.detail.doBeforeFilter;
+        this.doAfterFilter = event.detail.doAfterFilter;
+        this.beforeDateTime = event.detail.beforeDateTime;
+        this.afterDateTime = event.detail.afterDateTime;
     }
 
 

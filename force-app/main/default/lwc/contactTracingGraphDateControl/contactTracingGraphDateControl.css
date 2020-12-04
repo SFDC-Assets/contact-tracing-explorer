@@ -1,0 +1,32 @@
+.datecontainer {
+    border-width : 1px;
+    border-color : #DDDBDA;
+    border-style : solid;
+
+}
+
+.title {
+    display: inline-block;
+    padding-top:0.5em;
+    padding-left:1em;
+}
+
+header {
+    min-height : 32px;
+    border-bottom-color : #DDDBDA;
+    border-bottom-width : 1px;
+    border-bottom-style : solid;
+}
+
+.collapsebutton {
+    float:right;
+    border-left-width : 1px;
+    border-color : #DDDBDA;
+    border-left-style : solid;
+    padding:4px;
+}
+
+.form {
+    margin-left : 1em;
+    margin-right : 1em;
+}

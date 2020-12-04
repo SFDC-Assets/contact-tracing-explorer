@@ -66,7 +66,9 @@
                 </div>
             </div>
         </div>
-
+        <div class="datefilter">
+            <c-contact-tracing-graph-date-control ondatechange={changeDateFilter} collapse="true"></c-contact-tracing-graph-date-control>
+        </div>
         <div class="popup slds-hide">
             <c-contact-tracing-graph-popup recordid={popupRecordId} onclose={closePopup} onready={displayPopup}></c-contact-tracing-graph-popup>
         </div>

@@ -31,11 +31,11 @@ div.pancontrols {
 }
 
 div.pancontrols lightning-slider {
-  display:inline-block;
+  display: inline-block;
 }
 
 div.pancontrols table {
-  float:right;
+  float: right;
 }
 
 div.legend {
@@ -47,7 +47,14 @@ div.legend {
 div.zoomcontrols {
   position: absolute;
   top: 200px;
-  right:30px;
+  right: 30px;
+}
+
+div.datefilter {
+  width: 30em;
+  position: absolute;
+  top: 0px;
+  left: 150px;
 }
 
 image {
