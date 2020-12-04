@@ -408,7 +408,18 @@ export default class ContactTracingGraph extends NavigationMixin(LightningElemen
                 return color(d)
             })
             .text(function (d) {
-                return d
+                switch (d) {
+                    case 'Root' :
+                        return 'This Person'
+                    case 'Contact' :
+                        return 'Employee'
+                    case 'Lead' :
+                        return 'External Contact'
+                    case 'Lookup' :
+                        return 'Link'
+                    default:
+                        return d
+                }
             })
             .attr("text-anchor", "left")
             .style("alignment-baseline", "middle")
