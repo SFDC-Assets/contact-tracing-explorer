@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2020, salesforce.com, inc.
+ * All rights reserved.
+ * SPDX-License-Identifier: CC-0
+ * For full license text, see the LICENSE file in the repo root
+ */
 import {
     LightningElement,
     track,
