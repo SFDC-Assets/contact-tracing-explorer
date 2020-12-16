@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2020, salesforce.com, inc.
+ * All rights reserved.
+ * SPDX-License-Identifier: CC-0
+ * For full license text, see the LICENSE file in the repo root
+ */
 import {
     LightningElement,
     api,
@@ -16,7 +22,6 @@ import getGraphByAccountId from '@salesforce/apex/ContactTracingGraphCtrl.getGra
 import getGraphByEncounterId from '@salesforce/apex/ContactTracingGraphCtrl.getGraphByEncounterId';
 import getGraphByContactId from '@salesforce/apex/ContactTracingGraphCtrl.getGraphByContactId';
 import getGraphByLeadId from '@salesforce/apex/ContactTracingGraphCtrl.getGraphByLeadId';
-import getContactDetailsById from '@salesforce/apex/ContactTracingGraphCtrl.getContactDetailsById';
 import usericon from '@salesforce/resourceUrl/ctgraphusericon';
 import encountericon from '@salesforce/resourceUrl/ctgraphencountericon';
 import D3 from '@salesforce/resourceUrl/d3minjs11212020';
@@ -114,8 +119,6 @@ export default class ContactTracingGraph extends NavigationMixin(LightningElemen
     }
 
     pan() {
-        let width = this.width;
-        let height = this.height;
         let x = this.xshift;
         let y = this.yshift;
         let scalingFactor = this.zoomScalingFactors[this.zoom - 1];
@@ -195,18 +198,18 @@ export default class ContactTracingGraph extends NavigationMixin(LightningElemen
         this.beforeDateTime = event.detail.beforeDateTime;
         this.afterDateTime = event.detail.afterDateTime;
         getGraphByAccountId({
-            accountId: this.recordId,
-            beforedate: this.beforeDateTime,
-            afterdate: this.afterDateTime,
-            isRoot: true
-        })
-        .then(result => {
-            this.data = result;
-            this.update()
-        })
-        .catch(error => {
-            console.error(error)
-        })
+                accountId: this.recordId,
+                beforedate: this.beforeDateTime,
+                afterdate: this.afterDateTime,
+                isRoot: true
+            })
+            .then(result => {
+                this.data = result;
+                this.update()
+            })
+            .catch(error => {
+                console.error(error)
+            })
     }
 
 
@@ -244,9 +247,9 @@ export default class ContactTracingGraph extends NavigationMixin(LightningElemen
         if (node.type === 'Contact') {
             getGraphByContactId({
                     contactId: node.id,
-                    isRoot : false,
-                    beforedate : this.beforeDateTime,
-                    afterdate : this.afterDateTime
+                    isRoot: false,
+                    beforedate: this.beforeDateTime,
+                    afterdate: this.afterDateTime
                 })
                 .then(result => this.dedupAndUpdateGraph(result))
                 .catch(error => console.error(error))
@@ -254,8 +257,8 @@ export default class ContactTracingGraph extends NavigationMixin(LightningElemen
         if (node.type === 'Encounter') {
             getGraphByEncounterId({
                     encounterId: node.id,
-                    beforedate : this.beforeDateTime,
-                    afterdate : this.afterDateTime
+                    beforedate: this.beforeDateTime,
+                    afterdate: this.afterDateTime
                 })
                 .then(result => this.dedupAndUpdateGraph(result))
                 .catch(error => console.error(error))
@@ -263,8 +266,8 @@ export default class ContactTracingGraph extends NavigationMixin(LightningElemen
         if (node.type === 'Lead') {
             getGraphByLeadId({
                     leadId: node.id,
-                    beforedate : this.beforeDateTime,
-                    afterdate : this.afterDateTime
+                    beforedate: this.beforeDateTime,
+                    afterdate: this.afterDateTime
                 })
                 .then(result => this.dedupAndUpdateGraph(result))
                 .catch(error => console.error(error))
@@ -333,7 +336,7 @@ export default class ContactTracingGraph extends NavigationMixin(LightningElemen
     }
 
     ticked() {
-        this.link.attr("d", this.linkArc);
+        this.link.attr("d", this.drawLink);
         this.node.attr("transform", d => `translate(${d.x},${d.y})`);
     }
 
@@ -342,8 +345,7 @@ export default class ContactTracingGraph extends NavigationMixin(LightningElemen
         return usericon;
     }
 
-    linkArc(d) {
-        //const r = Math.hypot(d.target.x - d.source.x, d.target.y - d.source.y);
+    drawLink(d) {
         return `
       M${d.source.x},${d.source.y}
       L${d.target.x},${d.target.y}
@@ -411,40 +413,32 @@ export default class ContactTracingGraph extends NavigationMixin(LightningElemen
             .force("y", d3.forceY())
 
         //Create the legend
-        this.legend.selectAll("mydots")
+        this.legend.selectAll("dots")
             .data(types)
             .enter()
             .append("circle")
             .attr("cx", -width / 2 + 10)
-            .attr("cy", function (d, i) {
-                return -height / 2 + 10 + i * 25
-            }) // 100 is where the first dot appears. 25 is the distance between dots
+            .attr("cy", (d, i) => -height / 2 + 10 + i * 25) // 100 is where the first dot appears. 25 is the distance between dots
             .attr("r", 7)
-            .style("fill", function (d) {
-                return color(d)
-            })
+            .style("fill", d => color(d))
 
         // Add one dot in the legend for each name.
-        this.legend.selectAll("mylabels")
+        this.legend.selectAll("labels")
             .data(types)
             .enter()
             .append("text")
             .attr("x", -width / 2 + 30)
-            .attr("y", function (d, i) {
-                return -height / 2 + 10 + i * 25
-            }) // 100 is where the first dot appears. 25 is the distance between dots
-            .style("fill", function (d) {
-                return color(d)
-            })
-            .text(function (d) {
+            .attr("y", (d, i) => -height / 2 + 10 + i * 25) // 100 is where the first dot appears. 25 is the distance between dots
+            .style("fill", d => color(d))
+            .text(d => {
                 switch (d) {
-                    case 'Root' :
+                    case 'Root':
                         return 'This Person'
-                    case 'Contact' :
+                    case 'Contact':
                         return 'Employee'
-                    case 'Lead' :
+                    case 'Lead':
                         return 'External Contact'
-                    case 'Lookup' :
+                    case 'Lookup':
                         return 'Link'
                     default:
                         return d
