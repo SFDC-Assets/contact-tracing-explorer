@@ -24,5 +24,5 @@ https://developer.salesforce.com/tools/sfdxcli
 
 Unzip the repo into a working directory
 
-sfdx force:auth:web:login --setalias myworkdotcomdemoorg
-sfdx force:source:deploy --sourcepath ./ContactTracingGraph/force-app -u myworkdotcomdemoorg
+`sfdx force:auth:web:login --setalias myworkdotcomdemoorg`<br>
+`sfdx force:source:deploy --sourcepath ./ContactTracingGraph/force-app -u myworkdotcomdemoorg`
