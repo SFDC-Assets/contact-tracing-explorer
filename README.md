@@ -1,5 +1,4 @@
 # Contact Tracing LWC
-Author : Mark Lott mlott@salesforce.com
 
 This is a d3.js based interactive contact tracing graph
 
