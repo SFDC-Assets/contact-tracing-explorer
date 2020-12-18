@@ -1,10 +1,12 @@
 # Contact Tracing LWC
 
-This is a d3.js based interactive contact tracing graph
+This is a d3.js based interactive contact tracing graph for Work.com
 
-To use, add the contactTracingGraph component to the Account object page layout in Work.com
-Double click to expand nodes, right click to get context on the node.
-Can filter on a date range, so now you can have interessting contact tracing discussions.
+This component depends on Health Cloud or Work.com
+
+To use, add the contactTracingGraph component to the Account object page layout in Work.com<br>
+To interact with the graph: double click to expand nodes, right click to get context on the node.<br>
+Can filter on date ranges as well.<br>
 
 The screenshot below shows it added to an account record page. The graph will center on the account (i.e. employee) you are looking at.
 
